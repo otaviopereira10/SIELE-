@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIELE Global — Simulado de entrenamiento</title>
+<style>
+:root{
+  --wine:#a80045; --orange:#e57716; --blue:#1e6db3; --dark:#292929; --light:#f4f5f6; --panel:#e4e5e7; --text:#1f2328;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#eef0f2;color:var(--text);font-size:18px}
+button,select,textarea,input{font:inherit}
+button{cursor:pointer}
+.topbar{background:var(--dark);color:#fff;padding:14px 18px;font-size:22px}
+.gold{height:7px;background:#aa8b31}
+.bluebar{height:7px;background:var(--blue)}
+.orangebar{height:7px;background:var(--orange)}
+.app{max-width:1100px;margin:auto;background:#fff;min-height:100vh;box-shadow:0 0 30px rgba(0,0,0,.08)}
+.headerline{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #ccc}
+.tabs{display:flex;gap:2px;overflow:auto}
+.tab{background:#fff;border:1px solid #222;padding:10px 16px;white-space:nowrap}
+.tab.active{background:var(--wine);color:#fff}
+.timer{border:2px solid #8e415d;padding:10px 14px;background:#fff;min-width:170px;text-align:center}
+.container{padding:28px 5vw}
+.title{font-size:34px;margin:0 0 10px}
+.subtitle{color:#555;margin-bottom:22px}
+.card{background:var(--panel);padding:24px;border-radius:4px;margin:16px 0}
+.question{background:#eee;border-top:1px solid #ccc;padding:18px;margin:15px 0}
+.options label{display:block;background:#fff;border:1px solid #ccc;padding:14px;margin:9px 0;border-radius:5px}
+.options label:hover{border-color:var(--wine)}
+.correct{outline:3px solid #58a55c}
+.wrong{outline:3px solid #c24b4b}
+.primary{background:var(--wine);color:#fff;border:0;padding:14px 24px;border-radius:2px}
+.secondary{background:#fff;color:var(--wine);border:2px solid var(--wine);padding:12px 22px;border-radius:2px}
+.nav{display:flex;justify-content:space-between;gap:15px;margin-top:28px}
+.small{font-size:15px;color:#666}
+.notice{background:#fff8dd;border-left:5px solid #c69f32;padding:14px;margin:12px 0}
+.good{background:#e9f7ea;border-left:5px solid #4f9956;padding:14px}
+.warn{background:#fff0f0;border-left:5px solid #b84b4b;padding:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.container{padding:20px}.timer{min-width:145px}.title{font-size:27px}.headerline{align-items:flex-start;gap:10px;flex-direction:column}}
+textarea{width:100%;min-height:280px;border:1px solid #aaa;padding:14px;resize:vertical;background:#fff}
+.wordcount{font-size:14px;margin-top:5px;color:#555}
+.photo{border:1px solid #bbb;background:#fafafa;padding:8px}
+.selectrow{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}
+select{padding:9px;border:1px solid #999;background:#fff;min-width:260px}
+.fragment{background:#fff;border:1px solid #aaa;padding:13px;margin:8px 0}
+.itemrow{background:#fff;border:1px solid #d1d1d1;padding:12px;margin:8px 0}
+.mode{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.mode button{padding:18px;border:2px solid #bbb;background:#fff;text-align:left}
+.mode button.active{border-color:var(--wine);box-shadow:0 0 0 2px rgba(168,0,69,.12)}
+.badge{display:inline-block;padding:4px 8px;border-radius:10px;background:#e8e8e8;font-size:13px;margin-left:6px}
+.results table{width:100%;border-collapse:collapse}
+.results th,.results td{border:1px solid #ccc;padding:8px;text-align:left}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi .card{text-align:center}
+.big{font-size:34px;font-weight:700}
+.timerLarge{font-size:34px;font-weight:700;color:var(--wine)}
+.locked{opacity:.65}
+footer{padding:16px 5vw;background:#f2f2f2;font-size:13px;color:#555}
+.record{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.progress{height:10px;background:#ddd;margin:10px 0;border-radius:10px;overflow:hidden}
+.progress>div{height:100%;background:var(--wine);width:0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+const DATA = {"reading": {"t1": [{"text": "Hola, Ana: El sábado voy al mercado del barrio por la mañana. Después quiero comer en el restaurante nuevo de la plaza. Si te apetece venir, nos vemos a las once en la entrada del mercado. Un abrazo, Laura.", "q": "¿Dónde quiere encontrarse Laura con Ana?", "opts": ["En el restaurante", "En la entrada del mercado", "En la plaza de noche"], "a": 1}, {"text": "SE ALQUILA HABITACIÓN. Habitación individual en piso compartido con dos estudiantes. Piso luminoso, con terraza, dos baños y cocina grande. Está a cinco minutos del metro y cerca de varias líneas de autobús. Precio: 320 euros al mes, gastos incluidos.", "q": "El anuncio interesa a una persona que busca…", "opts": ["una habitación bien comunicada", "un piso para cuatro familias", "una casa en el centro histórico"], "a": 0}, {"text": "Mañana, sábado, habrá una feria de libros en la biblioteca municipal. Abrirá de diez de la mañana a seis de la tarde. La entrada es gratuita y habrá descuentos especiales para estudiantes. A las doce habrá una charla con dos escritores locales.", "q": "¿Qué actividad se puede hacer al mediodía?", "opts": ["Comprar comida gratis", "Escuchar a dos escritores", "Visitar una exposición de pintura"], "a": 1}, {"text": "La farmacia de la calle Mayor informa de que el viernes cerrará a las seis de la tarde por inventario. El sábado abrirá con su horario habitual, de nueve a dos. Para urgencias, pueden acudir a la farmacia de guardia de la avenida Central.", "q": "¿Cuándo cerrará la farmacia de la calle Mayor?", "opts": ["El jueves a las seis", "El viernes a las seis", "El sábado a las dos"], "a": 1}, {"text": "Queridos compañeros: Vendo una entrada para el partido del domingo porque finalmente tengo que trabajar. Es para la zona lateral y cuesta 25 euros. Si alguien está interesado, que me escriba antes del viernes por la noche. Gracias, Marcos.", "q": "¿Por qué Marcos vende la entrada?", "opts": ["Porque está enfermo", "Porque ha comprado dos entradas", "Porque tiene que trabajar"], "a": 2}], "t2": {"text": "Cada vez más ciudades están creando espacios para que los vecinos puedan desplazarse en bicicleta con mayor facilidad. En algunos lugares se han construido carriles bici protegidos, mientras que en otros se ha optado por sistemas de bicicletas públicas que pueden alquilarse durante unos minutos o varias horas.\n\nQuienes utilizan estos servicios suelen destacar dos ventajas. La primera es económica: para trayectos cortos, una bicicleta puede resultar más barata que un automóvil o incluso que el transporte público. La segunda es práctica, ya que permite evitar parte de los atascos y llegar rápidamente a zonas donde aparcar un coche resulta complicado.\n\nSin embargo, no todos los usuarios están satisfechos. Algunas personas consideran que faltan estaciones en determinados barrios y que, durante las horas de mayor demanda, resulta difícil encontrar bicicletas disponibles. También hay vecinos que creen que deberían mejorarse las normas de circulación y la convivencia entre ciclistas, peatones y conductores.\n\nLos ayuntamientos que han puesto en marcha estos sistemas suelen insistir en que no pretenden sustituir completamente al transporte público. Su objetivo es ofrecer una alternativa para determinados desplazamientos y facilitar la combinación entre distintos medios. Así, una persona puede utilizar el tren para recorrer una larga distancia y completar el último tramo en bicicleta.\n\nA pesar de las dificultades, el uso de la bicicleta urbana continúa creciendo. Para muchos ciudadanos, lo importante no es elegir un único medio de transporte, sino disponer de varias opciones según la distancia, el tiempo disponible y las condiciones del día.", "qs": [["¿Cuál es una de las ventajas económicas mencionadas?", ["Permite usar menos combustible en los trenes.", "Puede costar menos en trayectos cortos.", "Hace gratuitos los aparcamientos."], 1], ["¿Qué problema encuentran algunos usuarios?", ["No hay bicicletas disponibles en los momentos de mayor demanda.", "Las bicicletas son demasiado grandes.", "Los servicios solo funcionan de noche."], 0], ["¿Qué consideran algunos vecinos necesario mejorar?", ["El precio de los trenes.", "Las estaciones de larga distancia.", "Las normas de circulación y convivencia."], 2], ["¿Qué función puede tener la bicicleta respecto al tren?", ["Sustituirlo en viajes interurbanos.", "Completar el último tramo de un viaje.", "Llevar a los pasajeros hasta la estación de origen."], 1], ["¿Cuál es la idea principal del último párrafo?", ["La mejor solución es abandonar el transporte público.", "Los ciudadanos pueden combinar diferentes medios según sus necesidades.", "La bicicleta solo sirve para distancias muy cortas."], 1]]}, "t3": {"intro": "Usted va a leer tres textos. Elija la opción correcta para cada una de las ocho preguntas.", "texts": [["A — CLARA", "Durante mi viaje a Costa Rica había pensado pasar una semana en la capital, pero cambié de planes al conocer a una guía en una excursión. Me recomendó visitar una zona de montaña poco turística y finalmente reservé allí una habitación familiar. El lugar era tranquilo y pude hacer varias rutas a pie. Lo mejor fue que la dueña me explicó cómo utilizar el transporte local, algo que me ahorró bastante dinero."], ["B — DIEGO", "Hace unos meses empecé a colaborar como voluntario en una biblioteca de mi barrio. Al principio solo iba los sábados para ordenar libros, pero después me pidieron que ayudara a unos adolescentes con sus trabajos escolares. Ahora voy dos tardes a la semana. Me gusta especialmente cuando alguno vuelve para contarme que ha terminado un proyecto gracias a la ayuda que recibió."], ["C — MARTA", "Siempre he preferido viajar sin demasiados planes. En mi último viaje, sin embargo, una huelga de transporte cambió todo. Tuve que quedarme dos días más en la ciudad y buscar un alojamiento diferente. Al final fue una experiencia positiva porque conocí un barrio que no aparecía en las guías y descubrí varios restaurantes pequeños. Desde entonces dejo siempre un poco de tiempo libre en mis viajes."]], "qs": [["¿Quién recibió consejos de una persona del lugar?", [0, 1, 2], 0], ["¿Quién empezó haciendo una actividad sencilla y después asumió otra responsabilidad?", [0, 1, 2], 1], ["¿Quién tuvo que modificar un viaje por un problema de transporte?", [0, 1, 2], 2], ["¿Quién consiguió gastar menos gracias a una indicación?", [0, 1, 2], 0], ["¿Quién trabaja con jóvenes?", [0, 1, 2], 1], ["¿Quién descubrió un lugar que no esperaba visitar?", [0, 1, 2], 2], ["¿Quién valora que otras personas vuelvan para contarle sus resultados?", [0, 1, 2], 1], ["¿Quién ahora deja espacio en su agenda para cambios imprevistos?", [0, 1, 2], 2]]}, "t4": {"intro": "Usted va a leer dos textos en los que faltan cuatro fragmentos. Elija el fragmento correcto para cada hueco. De los cinco fragmentos, solo tiene que utilizar cuatro en cada texto.", "texts": [{"title": "Aprender fuera del aula", "body": "Cada vez más centros educativos buscan actividades que permitan a los estudiantes aprender fuera del aula. __________. Algunos profesores organizan visitas a museos, laboratorios o empresas para relacionar lo estudiado con situaciones reales.\n\nEstas experiencias no sustituyen las clases tradicionales. __________. Por ejemplo, una visita a un museo puede ser más útil si los alumnos reciben antes una pequeña guía y después deben preparar una actividad.\n\nTambién se ha observado que este tipo de actividades favorece el trabajo en equipo. __________. Los alumnos tienen que repartirse tareas, escuchar a sus compañeros y tomar decisiones conjuntamente.\n\nSin embargo, organizar estas salidas requiere tiempo y recursos. __________. Por ello, varios centros han empezado a colaborar con instituciones locales que ofrecen actividades educativas gratuitas o de bajo coste.", "frags": ["En realidad, sirven para complementar los contenidos trabajados durante la semana.", "Además, necesitan una preparación previa para aprovechar mejor la experiencia.", "De esta manera, el alumnado aprende a trabajar con otras personas.", "Algunos colegios consideran que todas las clases deberían hacerse fuera del edificio.", "El transporte y la entrada a determinados lugares pueden aumentar el presupuesto."], "answers": [0, 1, 2, 4]}, {"title": "Las compras de proximidad", "body": "En muchas ciudades han vuelto a crecer los pequeños comercios de barrio. __________. Para algunos vecinos, comprar cerca significa ahorrar tiempo y conocer personalmente a quienes trabajan en las tiendas.\n\nAdemás, determinados establecimientos ofrecen productos que no se encuentran fácilmente en los grandes supermercados. __________. Esta especialización puede ser especialmente útil para clientes que buscan alimentos concretos o artículos elaborados de forma local.\n\nNo obstante, los comercios pequeños también afrontan dificultades. __________. Por eso, algunos propietarios han empezado a vender por internet y a ofrecer sistemas de entrega a domicilio.\n\nEsta combinación entre atención personal y servicios digitales parece estar dando resultados. __________. Así, una tienda puede mantener su identidad local y, al mismo tiempo, llegar a clientes que viven más lejos.", "frags": ["Una de las razones es que ofrecen una atención más cercana.", "Por ejemplo, hay tiendas especializadas en productos regionales o artesanales.", "Competir con las grandes cadenas puede resultar difícil por sus precios y horarios.", "Los clientes ya no valoran ningún tipo de relación con los vendedores.", "La tecnología permite ampliar el número de personas que conocen el negocio."], "answers": [0, 1, 2, 4]}]}, "t5": {"intro": "Usted va a leer un texto en el que faltan doce palabras. Elija la opción correcta para cada hueco.", "text": "La transformación digital ha cambiado la manera en que muchas instituciones educativas organizan sus actividades. El uso de plataformas virtuales permite que profesores y estudiantes mantengan el contacto incluso cuando no se encuentran en el mismo lugar. Sin embargo, disponer de tecnología no garantiza por sí solo una mejora de la enseñanza.\n\nPara que una herramienta digital sea realmente útil, es necesario que responda a una necesidad concreta. Un sistema puede ofrecer numerosas funciones y, ________ (1), resultar poco práctico si nadie sabe utilizarlas adecuadamente. Por esta razón, la formación del profesorado desempeña un papel fundamental.\n\nOtro aspecto importante es el acceso. No todos los estudiantes cuentan con una conexión estable o con un dispositivo propio. ________ (2), algunas instituciones han optado por prestar equipos y ampliar los espacios con acceso a internet. Estas medidas no solucionan ________ (3) los problemas, pero reducen una parte de las dificultades.\n\nLa tecnología también puede facilitar nuevas formas de evaluación. En lugar de limitarse a un examen final, el docente puede combinar actividades breves, proyectos y ejercicios realizados durante el curso. ________ (4), obtiene una visión más amplia del proceso de aprendizaje. Además, las plataformas digitales permiten registrar parte de la evolución del estudiante.\n\nNo obstante, conviene evitar una visión excesivamente optimista. La incorporación de recursos tecnológicos debe ir acompañada de una reflexión pedagógica. De poco sirve incorporar una aplicación ________ (5) no modifica una práctica que ya presenta problemas.\n\nEn algunos centros, la digitalización ha favorecido también la colaboración entre departamentos. Profesores de distintas áreas pueden compartir materiales, coordinar proyectos y diseñar actividades interdisciplinarias. ________ (6), esta cooperación puede contribuir a que los estudiantes comprendan mejor la relación entre diferentes materias.\n\nPara que estos cambios sean sostenibles, las instituciones necesitan establecer objetivos claros. También deben evaluar periódicamente los resultados y modificar aquello que no funcione. ________ (7), la tecnología deja de ser un fin en sí misma y se convierte en un medio al servicio del aprendizaje.\n\nOtro desafío está relacionado con la protección de los datos personales. Las plataformas educativas almacenan información sobre estudiantes y profesores, por lo que las decisiones técnicas deben tener en cuenta la privacidad. ________ (8), es conveniente informar a los usuarios sobre qué datos se recopilan y con qué finalidad.\n\nLa digitalización educativa no consiste, por tanto, en sustituir completamente los métodos tradicionales. Se trata, más bien, de ampliar las posibilidades disponibles y elegir en cada situación la herramienta ________ (9) resulte más adecuada.\n\nEste proceso exige tiempo, recursos y capacidad de adaptación. ________ (10), también ofrece la posibilidad de revisar prácticas que llevaban años utilizándose sin cuestionarlas. Cuando existe una estrategia coherente, las innovaciones pueden producir cambios duraderos.\n\nEn definitiva, el éxito de la transformación digital dependerá menos de la cantidad de herramientas disponibles que de la manera ________ (11) se integren en la enseñanza. Para ello, será necesario combinar inversión, formación y evaluación continua. Solo ________ (12) se podrá aprovechar la tecnología sin convertirla en una dificultad añadida.", "opts": [["sin embargo", "por lo tanto", "a continuación"], ["Por este motivo", "Aunque", "En cambio"], ["todos", "todos de", "todos los"], ["De este modo", "A pesar", "Por si"], ["porque", "si", "aunque"], ["Asimismo", "Sin embargo", "En cambio"], ["De este modo", "En cambio", "Apenas"], ["Por ello", "Mientras", "Aunque"], ["que", "quien", "cual"], ["Por una parte", "A su vez", "Sin"], ["en que", "a que", "por que"], ["así", "entonces", "todavía"]], "answers": [0, 0, 2, 0, 1, 0, 0, 0, 0, 1, 0, 1]}}, "listening": {"t1": {"script": "— Hola, Marta. ¿Qué tal? ¿Ya has comprado el regalo para Carlos?\n— Todavía no. Pensaba ir esta tarde al centro.\n— Yo también tengo que comprarle algo. ¿Quieres que vayamos juntos?\n— Sí, pero hoy salgo de clase a las cinco y media.\n— Entonces podemos encontrarnos a las seis en la puerta de la librería.\n— ¿En la librería de la plaza?\n— No, en la de la calle Nueva, la que está junto a la estación.\n— Ah, vale. ¿Y después tomamos algo?\n— Claro. Hay una cafetería nueva enfrente. Dicen que está muy bien.\n— Perfecto. Por cierto, ¿tú sabes qué le gusta a Carlos?\n— Le interesa mucho la música, pero creo que ya tiene muchos discos.\n— Entonces podemos buscar un libro sobre su grupo favorito.\n— Buena idea. Yo puedo mirar los libros y tú puedes buscar una tarjeta.\n— Hecho. Nos vemos a las seis, entonces.", "options": ["a las cinco", "a las cinco y media", "a las seis", "en la biblioteca", "en la estación", "en la plaza", "en la calle Nueva", "en la calle Mayor", "una tarjeta", "un disco", "un libro", "un pastel", "un concierto", "una camiseta", "un videojuego"], "items": [["Marta sale de clase…", 1], ["Quieren encontrarse…", 2], ["La librería está en…", 6], ["Van a buscar para Carlos…", 10], ["Una de las personas puede comprar…", 8]]}, "t2": {"theme": "Usted va a escuchar cinco fragmentos breves y responder a cinco preguntas.", "items": [{"script": "Mañana voy a empezar un curso de cocina. Lo elegí porque siempre preparo los mismos platos y quería aprender algo diferente. Las clases serán los martes por la tarde y duran dos horas.", "q": "¿Por qué la persona se apuntó al curso?", "opts": ["Porque necesita un trabajo", "Porque quiere variar lo que cocina", "Porque se lo recomendó su jefe"], "a": 1}, {"script": "Este año no viajaremos en agosto. Hemos decidido hacerlo en octubre porque habrá menos turistas y los hoteles serán más baratos. Además, en esa época podremos caminar sin pasar tanto calor.", "q": "¿Por qué prefieren viajar en octubre?", "opts": ["Por el precio y el clima", "Porque tienen vacaciones escolares", "Porque sus amigos viajarán entonces"], "a": 0}, {"script": "El nuevo supermercado está cerca de mi casa y tiene buenos precios, pero no voy mucho porque siempre hay demasiada gente por la tarde. Prefiero ir temprano, cuando está más tranquilo.", "q": "¿Qué problema encuentra en el supermercado?", "opts": ["Está demasiado lejos", "Los precios son muy altos", "Hay mucha gente por la tarde"], "a": 2}, {"script": "Cuando llegué al trabajo, descubrí que había olvidado el ordenador en casa. Tuve que volver a buscarlo y, por eso, llegué quince minutos tarde a la reunión. Por suerte, mi jefe no se enfadó.", "q": "¿Qué ocurrió?", "opts": ["La reunión se canceló", "La persona olvidó su ordenador", "El jefe llegó tarde"], "a": 1}, {"script": "El próximo sábado habrá una carrera solidaria en el parque. No hace falta ser un corredor profesional: se puede participar caminando. La inscripción cuesta cinco euros y todo lo recaudado irá a una asociación de niños.", "q": "¿Qué pueden hacer los participantes?", "opts": ["Participar caminando", "Entrar gratis en el parque", "Recibir material profesional"], "a": 0}]}, "t3": {"theme": "Usted va a escuchar a ocho personas que hablan sobre hábitos de viaje. Elija la frase que corresponde a cada persona.", "options": ["Prefiere organizar todos los detalles antes de salir.", "Le gusta conversar con la gente del lugar.", "Viaja principalmente por motivos de trabajo.", "Siempre lleva una cámara profesional.", "Ha empezado a viajar solo recientemente.", "Evita los lugares con muchos turistas.", "Prefiere viajar en tren siempre que puede.", "Suele elegir alojamientos pequeños.", "No puede viajar durante los meses de verano.", "Utiliza viajes anteriores para elegir nuevos destinos.", "Le preocupa especialmente el presupuesto."], "scripts": ["Hasta hace poco siempre viajaba con amigos o con mi familia. Este año tuve unos días libres y decidí probar por mi cuenta. Me gustó mucho tener libertad para cambiar de plan, así que creo que repetiré la experiencia.", "Cuando llego a una ciudad, intento hablar con los vecinos y con los dueños de las tiendas. Muchas veces me han recomendado lugares que no aparecen en las guías y he terminado conociendo sitios muy interesantes.", "Para mí, preparar un viaje es casi tan divertido como hacerlo. Antes de salir comparo hoteles, rutas, restaurantes y horarios. Incluso suelo hacer una lista de lo que quiero visitar cada día.", "Siempre que puedo, voy en tren. Me resulta más cómodo que conducir y puedo leer o trabajar durante el trayecto. Además, muchas estaciones están bastante cerca del centro.", "No suelo reservar grandes hoteles. Me gustan más los alojamientos pequeños porque suelen ser tranquilos y permiten conocer mejor la zona. A veces son casas familiares o pensiones con muy pocas habitaciones.", "En mis viajes intento evitar las zonas más famosas. Prefiero descubrir barrios normales, mercados y parques donde haya menos visitantes. No me interesa tanto hacer una foto delante de un monumento.", "Mi trabajo me obliga a viajar bastante. La mayoría de mis viajes son para asistir a reuniones o visitar clientes, así que conozco muchos aeropuertos y hoteles por motivos profesionales.", "Cada vez que vuelvo de un viaje, guardo una lista de los lugares que más me han gustado. Luego, cuando pienso en mis próximas vacaciones, consulto esas notas y busco destinos parecidos."], "answers": [4, 1, 0, 6, 7, 5, 2, 9]}, "t4": {"script": "Entrevistadora: Hoy hablamos sobre los huertos urbanos, una iniciativa que ha aparecido en muchas ciudades durante los últimos años. Nos acompaña Elena Martín, coordinadora de un proyecto municipal. Elena, para empezar, ¿qué es exactamente un huerto urbano?\n\nElena: Es un espacio donde los vecinos pueden cultivar pequeñas parcelas de verduras, hierbas o flores. No se trata de producir grandes cantidades de alimentos, sino de ofrecer a la ciudadanía un lugar para participar, aprender y relacionarse. En nuestro caso, los terrenos pertenecen al ayuntamiento y se asignan por un periodo determinado.\n\nEntrevistadora: ¿Cómo empezó el proyecto?\n\nElena: Al principio surgió como una propuesta de una asociación vecinal. Había varios terrenos sin utilizar y un grupo de residentes pensó que podrían aprovecharse de otra manera. El ayuntamiento estudió la idea y decidió poner en marcha un proyecto piloto con treinta parcelas. La respuesta fue mucho mayor de lo esperada y recibimos más de doscientas solicitudes.\n\nEntrevistadora: ¿Qué buscan principalmente las personas que participan?\n\nElena: Hay perfiles muy diferentes. Algunas personas tienen experiencia en jardinería y quieren seguir cultivando. Otras nunca habían plantado nada y buscan aprender. También participan jubilados, familias con niños y personas que trabajan desde casa y desean realizar una actividad al aire libre. Para muchas, la posibilidad de conocer a otros vecinos es tan importante como la propia actividad agrícola.\n\nEntrevistadora: ¿Han encontrado dificultades?\n\nElena: Sí. La primera fue organizar el sistema de asignación, porque había muchas más solicitudes que parcelas disponibles. Otra dificultad ha sido el agua. Mantener un huerto requiere un suministro regular, y al principio nuestro sistema no era suficientemente eficiente. Tuvimos que instalar depósitos y mejorar el riego para evitar desperdicios.\n\nEntrevistadora: ¿Y qué han aprendido de esa experiencia?\n\nElena: Que no basta con entregar un terreno y unas herramientas. Los participantes necesitan información básica y acompañamiento, especialmente al principio. Por eso ahora ofrecemos talleres sobre riego, compostaje y prevención de plagas. También hemos creado un pequeño calendario común para organizar algunas tareas.\n\nEntrevistadora: ¿Han observado beneficios para el barrio?\n\nElena: Sí. Uno de los más claros es que un espacio que estaba prácticamente abandonado ahora tiene actividad todos los días. Además, los vecinos se conocen más. Hemos visto que personas de edades muy distintas trabajan juntas y comparten conocimientos. También hemos organizado actividades abiertas para las escuelas cercanas.\n\nEntrevistadora: Algunas personas dicen que estos huertos pueden mejorar la alimentación de los vecinos. ¿Está de acuerdo?\n\nElena: Pueden contribuir, aunque sería exagerado pensar que una pequeña parcela puede proporcionar todos los alimentos que necesita una familia. Su aportación es más bien educativa y complementaria. Las personas aprenden cómo se producen ciertos alimentos y, en algunos casos, aumentan su consumo de verduras porque empiezan a cultivarlas.\n\nEntrevistadora: ¿Qué planes tienen para el futuro?\n\nElena: Queremos ampliar el proyecto a dos barrios más, pero todavía estamos estudiando si disponemos de terrenos adecuados y de suficiente agua. También nos interesa crear un programa específico para escuelas. La idea sería que los alumnos pudieran participar durante todo el curso y observar cómo cambian las plantas a lo largo de las estaciones.\n\nEntrevistadora: Entonces, ¿diría que el proyecto ha cumplido sus objetivos?\n\nElena: En buena parte sí, aunque todavía quedan aspectos por mejorar. No queremos crecer demasiado rápido porque sería un error ampliar el número de parcelas sin contar con recursos para mantenerlas. Preferimos consolidar lo que funciona, corregir las deficiencias y después estudiar una expansión gradual.", "qs": [["¿Cuál era la situación de los terrenos antes del proyecto?", ["Estaban ocupados por escuelas.", "No se utilizaban.", "Se usaban como aparcamientos privados."], 1], ["¿Qué ocurrió cuando se anunció el proyecto piloto?", ["Hubo menos solicitudes de las previstas.", "Se canceló la iniciativa.", "Recibieron muchas más solicitudes que parcelas."], 2], ["¿Qué buscan algunas personas además de cultivar?", ["Aprender a conducir.", "Conocer a otros vecinos.", "Encontrar un trabajo."], 1], ["¿Qué problema técnico tuvieron al principio?", ["El sistema de riego era poco eficiente.", "No tenían herramientas.", "Faltaba electricidad."], 0], ["¿Qué medida adoptaron después?", ["Construyeron un restaurante.", "Ofrecieron talleres y acompañamiento.", "Eliminaron las parcelas pequeñas."], 1], ["¿Qué efecto social menciona Elena?", ["Los vecinos tienen menos contacto.", "Personas de distintas edades colaboran.", "Las familias han dejado de visitar las escuelas."], 1], ["¿Qué dice Elena sobre la alimentación?", ["Los huertos pueden ser una ayuda, pero no sustituyen toda la alimentación familiar.", "Las parcelas permiten producir toda la comida de una familia.", "Los huertos solo sirven para cultivar flores."], 0], ["¿Por qué quieren ampliar el proyecto con cautela?", ["Porque no existen nuevos barrios.", "Porque deben asegurar terrenos y recursos suficientes.", "Porque los vecinos ya no quieren participar."], 1]]}, "t5": {"theme": "Usted va a escuchar una conferencia dividida en seis fragmentos. En cada uno hay una idea correcta.", "fragments": [{"script": "Cuando hablamos de bibliotecas del futuro, no debemos pensar únicamente en edificios llenos de libros. Muchas bibliotecas ya funcionan también como espacios de encuentro, aprendizaje y creación. Esto significa que el diseño interior adquiere una importancia especial: debe permitir tanto la concentración individual como el trabajo colectivo. La transformación no consiste en eliminar el silencio, sino en ofrecer zonas diferentes según las necesidades.", "opts": ["Las bibliotecas deberían abandonar los libros.", "El diseño debe permitir diferentes formas de uso.", "El trabajo colectivo es incompatible con una biblioteca."], "a": 1}, {"script": "Otro cambio importante es la incorporación de recursos digitales. El acceso a ordenadores, bases de datos y cursos en línea puede ampliar enormemente los servicios de una biblioteca. Sin embargo, la tecnología por sí sola no garantiza que los usuarios aprendan más. Es necesario que exista personal capaz de orientar a las personas y ayudarles a seleccionar información fiable.", "opts": ["La tecnología hace innecesario al personal.", "Los recursos digitales pueden ampliar los servicios, pero requieren orientación.", "Las bibliotecas solo deben ofrecer cursos tecnológicos."], "a": 1}, {"script": "También se ha modificado el perfil de quienes utilizan estos espacios. Antes se asociaba la biblioteca principalmente con estudiantes y lectores habituales. Hoy pueden acudir personas que buscan asesoramiento para realizar un trámite, acceder a internet o asistir a una actividad cultural. Por eso, muchas instituciones han empezado a colaborar con asociaciones y servicios públicos del barrio.", "opts": ["Los usuarios de las bibliotecas son ahora más diversos.", "Las bibliotecas han dejado de colaborar con asociaciones.", "Solo los estudiantes utilizan estos espacios."], "a": 0}, {"script": "Una cuestión menos visible, pero igualmente relevante, es la inclusión. Si una biblioteca quiere ser realmente pública, debe tener en cuenta las necesidades de personas con distintas capacidades. Rampas, señalización clara, mobiliario accesible y materiales adaptados pueden marcar una gran diferencia. Además, la accesibilidad no debe limitarse al edificio: también debe aplicarse a las plataformas digitales.", "opts": ["La accesibilidad solo afecta a las entradas de los edificios.", "Los materiales adaptados son innecesarios.", "La inclusión requiere medidas físicas y digitales."], "a": 2}, {"script": "Las bibliotecas también pueden desempeñar una función ambiental. Algunas han comenzado a organizar talleres sobre reparación, consumo responsable o intercambio de objetos. No se trata de convertirlas en centros especializados en ecología, sino de aprovechar su capacidad para difundir conocimientos y poner en contacto a personas con intereses comunes. En este sentido, una biblioteca puede convertirse en un punto de encuentro para iniciativas locales.", "opts": ["Las bibliotecas pueden apoyar iniciativas ambientales de la comunidad.", "Las bibliotecas deben especializarse únicamente en ecología.", "Los talleres ambientales sustituyen las actividades culturales."], "a": 0}, {"script": "En definitiva, la biblioteca del futuro no será necesariamente más grande, sino más flexible. El reto consiste en adaptar sus recursos a una comunidad que cambia rápidamente. Para lograrlo, será necesario escuchar a los usuarios, observar qué servicios funcionan y revisar las decisiones cuando las circunstancias cambien. La innovación, por tanto, no debe entenderse como una carrera por incorporar novedades, sino como un proceso continuo de adaptación.", "opts": ["La innovación consiste en comprar la tecnología más nueva.", "Una biblioteca flexible debe adaptarse continuamente a su comunidad.", "Las necesidades de los usuarios cambian muy poco."], "a": 1}]}, "t6": {"script": "En los últimos años, muchas universidades han comenzado a revisar la manera en que organizan el primer año de los estudiantes. El motivo principal es que la transición desde la escuela secundaria hasta la educación universitaria puede resultar complicada, incluso para quienes obtienen buenos resultados académicos. Las dificultades no se limitan a las asignaturas: también incluyen la organización del tiempo, la adaptación a nuevas normas y la creación de relaciones sociales.\n\nUna de las iniciativas más frecuentes consiste en ofrecer programas de orientación antes de que empiece el curso. En ellos, los estudiantes reciben información sobre las instalaciones, los servicios disponibles y los procedimientos administrativos. Sin embargo, varios estudios indican que una sesión inicial no siempre es suficiente. Por eso, algunas universidades han distribuido estas actividades a lo largo del primer semestre, de manera que los alumnos puedan recibir apoyo cuando realmente lo necesitan.\n\nOtro recurso son los programas de tutoría entre compañeros. En estos casos, estudiantes de cursos avanzados acompañan a los recién llegados durante las primeras semanas. La relación no pretende sustituir al profesorado. Más bien, permite resolver dudas prácticas y compartir experiencias. Los estudiantes veteranos pueden explicar, por ejemplo, cómo organizar el estudio de varias asignaturas o cómo localizar determinados recursos.\n\nTambién se ha extendido el uso de pequeños cursos sobre hábitos de estudio. Tradicionalmente se suponía que un alumno que llegaba a la universidad ya sabía planificar su tiempo, tomar apuntes y preparar un examen. La experiencia ha demostrado que estas habilidades no aparecen de forma automática. Enseñarlas explícitamente puede reducir parte del estrés inicial y ayudar a los estudiantes a identificar qué estrategias les funcionan mejor.\n\nNo obstante, existe un riesgo: convertir la orientación en un conjunto de actividades obligatorias que los estudiantes perciban como una carga adicional. Por eso, algunos programas permiten elegir entre diferentes talleres y ofrecen apoyo individual a quienes lo solicitan. El objetivo es combinar una estructura común con cierta libertad.\n\nLa tecnología también desempeña un papel relevante. Las universidades pueden utilizar plataformas para enviar recordatorios, ofrecer materiales y permitir que los estudiantes reserven citas con asesores. Sin embargo, el uso excesivo de mensajes automáticos puede generar el efecto contrario al deseado. Los estudiantes pueden recibir tanta información que terminan ignorándola. Por ello, la cantidad de comunicación debe equilibrarse con su utilidad.\n\nEn definitiva, apoyar a los estudiantes de primer año no consiste en eliminar todas las dificultades. La universidad también implica aprender a asumir responsabilidades nuevas. La meta es proporcionar herramientas para que los estudiantes puedan afrontar esas dificultades de manera progresivamente autónoma.", "options": ["La transición universitaria puede presentar dificultades más allá de las asignaturas.", "Una única sesión inicial siempre resuelve todas las necesidades de los estudiantes.", "Los programas de tutoría entre compañeros sustituyen a los profesores.", "Las universidades han empezado a enseñar algunas habilidades de estudio de forma explícita.", "La orientación debe ser completamente obligatoria para todos.", "El exceso de mensajes puede reducir la eficacia de la comunicación.", "Los estudiantes veteranos pueden ayudar con dudas prácticas.", "La tecnología no tiene ninguna utilidad en la orientación universitaria.", "Algunos programas combinan actividades comunes con opciones de elección.", "El objetivo principal es evitar que los estudiantes asuman responsabilidades.", "La orientación solo debe centrarse en los procedimientos administrativos.", "El apoyo puede buscar que los estudiantes ganen autonomía progresivamente."], "answers": [0, 3, 5, 6, 8, 11]}}, "writing": {"t1": {"prompt": "Ha recibido este mensaje de su amiga Laura:\n\n«Hola. Me han dicho que vas a vivir en otra ciudad durante unos meses. ¡Qué bien! ¿Cómo es tu nueva casa? ¿Qué transporte utilizas? ¿Qué te gusta y qué no te gusta de tu nueva vida? Cuéntame también qué has hecho allí desde que llegaste.\n\nUn abrazo,\nLaura»", "instructions": ["Salude a Laura.", "Describa su nueva casa y la zona donde está.", "Explique qué medios de transporte utiliza.", "Diga qué le gusta y qué no le gusta de su nueva vida.", "Cuente qué ha hecho desde que llegó y despídase."], "min": 100, "max": 150}, "t2": {"options": [{"title": "Texto de opinión: EL TELETRABAJO Y LA VIDA EN LAS CIUDADES", "prompt": "Un periódico local publica que cada vez más empresas permiten a sus empleados trabajar desde casa varios días a la semana. El artículo plantea si esta situación mejora realmente la calidad de vida o si crea nuevos problemas. Escriba un texto de opinión para el periódico."}, {"title": "Carta a la redacción: UN PARQUE PÚBLICO SIN MANTENIMIENTO", "prompt": "Los vecinos de un barrio denuncian que un parque público está cada vez más deteriorado: hay bancos rotos, poca iluminación y zonas infantiles que no se reparan. La ciudad ha anunciado que estudia el problema. Escriba una carta a la redacción de un periódico local."}], "instructions": ["Presente claramente el tema.", "Exponga su opinión.", "Desarrolle argumentos y ejemplos.", "Considere al menos una posible perspectiva diferente.", "Concluya dejando clara su postura."], "min": 250, "max": 300}}, "oral": {"t1": [["¿Dónde vive actualmente?", 15], ["¿Cuál es su comida favorita?", 15], ["¿Qué hizo el pasado fin de semana?", 30], ["¿Qué planes tiene para sus próximas vacaciones y por qué?", 30]], "t2": {"instructions": ["Cuántas personas hay y qué relación existe entre ellas.", "Cómo son esas personas y qué ropa llevan.", "Qué están haciendo y cómo cree que se sienten.", "En qué lugar se encuentran y cómo es.", "Qué objetos hay, cómo son y dónde están."], "scenes": [{"title": "Opción 1 — Preparando una comida", "svg": "<svg viewBox=\"0 0 800 450\" xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Escena familiar en una cocina\">\n                <defs><linearGradient id=\"g1\" x1=\"0\" x2=\"1\"><stop offset=\"0\" stop-color=\"#efe7dc\"/><stop offset=\"1\" stop-color=\"#cfd8dc\"/><\/linearGradient><\/defs>\n                <rect width=\"800\" height=\"450\" fill=\"url(#g1)\"/><rect x=\"0\" y=\"0\" width=\"800\" height=\"290\" fill=\"#f3efe8\"/>\n                <rect x=\"20\" y=\"55\" width=\"240\" height=\"160\" rx=\"8\" fill=\"#ded6cb\"/><rect x=\"45\" y=\"80\" width=\"70\" height=\"60\" fill=\"#fff\"/><rect x=\"130\" y=\"80\" width=\"70\" height=\"60\" fill=\"#fff\"/>\n                <rect x=\"280\" y=\"180\" width=\"480\" height=\"40\" rx=\"5\" fill=\"#8d6e63\"/><rect x=\"300\" y=\"220\" width=\"440\" height=\"140\" fill=\"#795548\"/>\n                <circle cx=\"170\" cy=\"250\" r=\"42\" fill=\"#d6a77a\"/><rect x=\"132\" y=\"290\" width=\"76\" height=\"85\" rx=\"20\" fill=\"#3f6f8f\"/><rect x=\"140\" y=\"365\" width=\"28\" height=\"70\" fill=\"#4c4c4c\"/><rect x=\"172\" y=\"365\" width=\"28\" height=\"70\" fill=\"#4c4c4c\"/>\n                <circle cx=\"390\" cy=\"245\" r=\"38\" fill=\"#c58f6b\"/><rect x=\"355\" y=\"280\" width=\"70\" height=\"95\" rx=\"20\" fill=\"#c76b5d\"/><rect x=\"365\" y=\"365\" width=\"20\" height=\"70\" fill=\"#444\"/><rect x=\"395\" y=\"365\" width=\"20\" height=\"70\" fill=\"#444\"/>\n                <circle cx=\"585\" cy=\"250\" r=\"40\" fill=\"#e0b38b\"/><rect x=\"548\" y=\"287\" width=\"75\" height=\"90\" rx=\"18\" fill=\"#6e8e68\"/><rect x=\"555\" y=\"370\" width=\"25\" height=\"65\" fill=\"#555\"/><rect x=\"593\" y=\"370\" width=\"25\" height=\"65\" fill=\"#555\"/>\n                <circle cx=\"690\" cy=\"250\" r=\"33\" fill=\"#b97c59\"/><rect x=\"660\" y=\"280\" width=\"62\" height=\"82\" rx=\"16\" fill=\"#e2b34f\"/><rect x=\"668\" y=\"355\" width=\"20\" height=\"75\" fill=\"#4e5964\"/><rect x=\"695\" y=\"355\" width=\"20\" height=\"75\" fill=\"#4e5964\"/>\n                <circle cx=\"490\" cy=\"325\" r=\"24\" fill=\"#d9d9d9\"/><rect x=\"470\" y=\"305\" width=\"40\" height=\"40\" rx=\"8\" fill=\"#f5f5f5\"/>\n                <text x=\"28\" y=\"420\" font-family=\"Arial\" font-size=\"20\" fill=\"#333\">Cocina luminosa • mesa • fruta • vasos • personas preparando comida<\/text>\n                <\/svg>"}, {"title": "Opción 2 — Esperando un autobús", "svg": "<svg viewBox=\"0 0 800 450\" xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Personas esperando un autobús\">\n                <rect width=\"800\" height=\"450\" fill=\"#dce5ec\"/><rect y=\"300\" width=\"800\" height=\"150\" fill=\"#7a858c\"/><rect y=\"240\" width=\"800\" height=\"60\" fill=\"#aab4b9\"/>\n                <rect x=\"70\" y=\"105\" width=\"270\" height=\"145\" rx=\"12\" fill=\"#e9eef1\" stroke=\"#555\" stroke-width=\"4\"/><rect x=\"90\" y=\"125\" width=\"235\" height=\"70\" fill=\"#bed2de\"/><rect x=\"95\" y=\"205\" width=\"90\" height=\"15\" fill=\"#555\"/><rect x=\"205\" y=\"205\" width=\"95\" height=\"15\" fill=\"#555\"/>\n                <circle cx=\"220\" cy=\"265\" r=\"38\" fill=\"#d9a27d\"/><rect x=\"186\" y=\"300\" width=\"70\" height=\"90\" rx=\"18\" fill=\"#597a9e\"/><rect x=\"195\" y=\"385\" width=\"23\" height=\"65\" fill=\"#42464b\"/><rect x=\"230\" y=\"385\" width=\"23\" height=\"65\" fill=\"#42464b\"/>\n                <circle cx=\"390\" cy=\"270\" r=\"35\" fill=\"#b97c59\"/><rect x=\"358\" y=\"300\" width=\"66\" height=\"88\" rx=\"18\" fill=\"#c9a24b\"/><rect x=\"367\" y=\"384\" width=\"23\" height=\"66\" fill=\"#444\"/><rect x=\"396\" y=\"384\" width=\"23\" height=\"66\" fill=\"#444\"/>\n                <circle cx=\"560\" cy=\"262\" r=\"32\" fill=\"#c8956f\"/><rect x=\"532\" y=\"290\" width=\"60\" height=\"90\" rx=\"18\" fill=\"#7d9f8c\"/><rect x=\"540\" y=\"375\" width=\"20\" height=\"72\" fill=\"#4c4c4c\"/><rect x=\"570\" y=\"375\" width=\"20\" height=\"72\" fill=\"#4c4c4c\"/>\n                <rect x=\"75\" y=\"80\" width=\"270\" height=\"25\" rx=\"4\" fill=\"#4f6d7a\"/><text x=\"110\" y=\"99\" font-family=\"Arial\" font-size=\"18\" fill=\"white\">PARADA 24 • CENTRO<\/text>\n                <rect x=\"500\" y=\"160\" width=\"150\" height=\"60\" rx=\"10\" fill=\"#f5f2e8\"/><text x=\"520\" y=\"195\" font-family=\"Arial\" font-size=\"18\" fill=\"#444\">HORARIOS<\/text>\n                <text x=\"25\" y=\"425\" font-family=\"Arial\" font-size=\"20\" fill=\"#333\">Parada de autobús • tres personas • bancos • cartel • mochilas<\/text>\n                <\/svg>"}]}, "t3": {"private": [{"title": "Opción 1 — Rechazar una invitación", "points": ["Salude a su amigo.", "Explique por qué no puede ir al almuerzo.", "Proponga otra ocasión concreta para verse."]}, {"title": "Opción 2 — Organizar una celebración", "points": ["Llame a un amigo para contarle que quiere organizar una celebración.", "Explique dónde y cuándo será y qué harán.", "Pídale ayuda con una tarea concreta."]}], "public": [{"title": "Opción 1 — Pedir información en una estación", "points": ["Explique a un empleado a qué ciudad quiere viajar.", "Pregunte por horarios y precios.", "Pida una alternativa si el horario que necesita no está disponible."]}, {"title": "Opción 2 — Devolver un producto", "points": ["Explique qué compró y cuál es el problema.", "Pregunte por las opciones para cambiarlo o devolverlo.", "Proponga una solución que le parezca adecuada."]}]}, "t4": {"topics": [{"title": "Tema 1 — El uso de bicicletas en la ciudad", "text": "Cada vez más ciudades crean carriles bici y sistemas de bicicletas públicas. Sus defensores señalan que pueden reducir algunos desplazamientos en automóvil y facilitar trayectos cortos. Sin embargo, también existen problemas de seguridad, espacio urbano y convivencia con peatones y conductores. Las decisiones de cada ciudad dependen de sus necesidades y de cómo se diseñan las infraestructuras.", "questions": ["¿Qué opina sobre aumentar el uso de bicicletas en las ciudades?", "¿Existe en su país algún problema importante relacionado con el transporte en bicicleta?", "Si su ciudad duplicara el número de carriles bici el próximo año, ¿cómo cree que cambiaría la vida de los habitantes?"]}, {"title": "Tema 2 — El consumo de productos locales", "text": "Los productos locales pueden reducir algunos desplazamientos y ayudar a pequeños productores. También permiten a los consumidores conocer mejor el origen de lo que compran. No obstante, estos productos no siempre son más baratos y su disponibilidad puede depender de la temporada. Por ello, algunas personas combinan productos locales con otros que proceden de regiones más lejanas.", "questions": ["¿Qué opina sobre comprar productos locales con frecuencia?", "¿Qué papel tienen los productos locales en su país o en su ciudad?", "Si los precios de los productos locales fueran mucho más altos, ¿seguiría comprándolos? ¿Por qué?"]}]}, "t5": {"topic1": ["El consumo de productos de proximidad debe convertirse en la principal forma de comprar alimentos.", "La mejor manera de mejorar la alimentación es informar a los consumidores, pero dejarles libertad para elegir."], "topic2": ["Las ciudades deberían invertir más dinero en infraestructuras para bicicletas aunque eso reduzca espacio para los automóviles.", "La movilidad urbana debe combinar diferentes medios de transporte sin dar prioridad absoluta a uno solo."]}}};
+let mode='real';
+let section='home';
+let taskIndex=0;
+let globalSeconds=0;
+let timerHandle=null;
+let listeningPlays={};
+let answers={reading:{},listening:{},writing:{},oral:{}};
+let writings={t1:'',t2:'',t2choice:0};
+let oralNotes={t1:[],t2:'',t3private:'',t3public:'',t4:[],t5:''};
+let selectedT4=0; let oralChoice5='';
+let mediaRecorder=null, recordedChunks=[];
+let recordTimer=null;
+
+const S = id => document.getElementById(id);
+function esc(x){return String(x).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));}
+function fmt(s){s=Math.max(0,s);let m=Math.floor(s/60),x=s%60;return String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');}
+function modeLabel(){return mode==='easy'?'FÁCIL':mode==='hard'?'HARD':'REAL SIELE';}
+function timeMult(){return mode==='easy'?1.4:mode==='hard'?0.82:1;}
+function speechRate(){return mode==='easy'?.86:mode==='hard'?1.08:1.0;}
+function startGlobal(sec){clearInterval(timerHandle);globalSeconds=Math.round(sec*timeMult());timerHandle=setInterval(()=>{globalSeconds--;updateTimer();if(globalSeconds<=0){clearInterval(timerHandle);alert('El tiempo de esta prueba ha terminado.');}},1000);}
+function updateTimer(){let e=document.querySelector('#globalTimer'); if(e)e.textContent=fmt(globalSeconds);}
+function header(title,bar='gold'){
+  return `<div class="topbar">${esc(title)}</div><div class="${bar}"></div>`;
+}
+function tabs(active){
+  const names=['Comprensión de lectura','Comprensión auditiva','Expresión e interacción escritas','Expresión e interacción orales'];
+  return `<div class="tabs">${names.map((n,i)=>`<button class="tab ${active===i?'active':''}" ${active===i?'':'onclick="goSection('+i+')"' }>${n}</button>`).join('')}</div>`;
+}
+function shell(body,title,bar,active=-1){
+  return `${header(title,bar)}
+  <div class="headerline">${active>=0?tabs(active):'<div></div>'}<div class="timer">Tiempo: <b id="globalTimer">--:--</b></div></div>${body}
+  <footer>Simulado independiente de entrenamiento. El contenido es original y no reproduce materiales oficiales. Formato y criterios de diseño basados en la documentación pública del SIELE. El audio de esta app usa síntesis de voz del navegador, no locuciones oficiales.</footer>`;
+}
+function render(){
+  if(section==='home'){renderHome();return;}
+  if(section===0)renderReading();
+  if(section===1)renderListening();
+  if(section===2)renderWriting();
+  if(section===3)renderOral();
+}
+function renderHome(){
+  section='home';
+  S('app').innerHTML=`
+  ${header('SIELE Global — Simulado completo para iPad','gold')}
+  <div class="container">
+    <h1 class="title">Simulado completo de alto realismo</h1>
+    <p class="subtitle">Formato progressivo A1 → C1, com controle de tempo, navegação por tarefas e correção automática nas provas objetivas.</p>
+    <div class="notice"><b>Como usar:</b> para o melhor treino, escolha <b>REAL SIELE</b>. Os modos FÁCIL e HARD mantêm os mesmos tipos de tarefa, mas alteram tempo e velocidade do áudio para treino.</div>
+    <h2>Escolha o modo</h2>
+    <div class="mode">
+      <button id="mEasy" onclick="setMode('easy')"><b>FÁCIL</b><br><span class="small">+40% de tempo e áudio mais lento.</span></button>
+      <button id="mReal" class="active" onclick="setMode('real')"><b>REAL SIELE</b><br><span class="small">Tempos oficiais e dificuldade progressiva.</span></button>
+      <button id="mHard" onclick="setMode('hard')"><b>HARD</b><br><span class="small">-18% de tempo e áudio mais rápido.</span></button>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Comprensión de lectura</h3><div class="big">38</div><div>preguntas · 60 min</div></div>
+      <div class="card"><h3>Comprensión auditiva</h3><div class="big">38</div><div>preguntas · 55 min · 2 escuchas</div></div>
+      <div class="card"><h3>Expresión escrita</h3><div class="big">2</div><div>tareas · 50 min</div></div>
+      <div class="card"><h3>Expresión oral</h3><div class="big">5</div><div>tareas · 15 min</div></div>
+    </div>
+    <div class="card">
+      <h3>Reglas del simulacro</h3>
+      <p>En Comprensión de lectura y Comprensión auditiva, los errores no restan puntos y conviene responder todo.</p>
+      <p>En escritura y oralidad, la calificación de la app no sustituye una evaluación humana: estas respuestas requieren valorar cumplimiento de la tarea y uso de la lengua.</p>
+    </div>
+    <button class="primary" onclick="startExam()">INICIAR SIMULADO</button>
+    <button class="secondary" style="margin-left:10px" onclick="showBlueprint()">VER ESTRUCTURA Y CRITERIOS</button>
+  </div>`;
+}
+function setMode(m){mode=m;document.querySelectorAll('.mode button').forEach(x=>x.classList.remove('active'));S('m'+m.charAt(0).toUpperCase()+m.slice(1)).classList.add('active');}
+function startExam(){section=0;taskIndex=0;startGlobal(3600);render();}
+
+function goSection(i){
+  if(i>section && section!=='home'){section=i;taskIndex=0;startGlobal(i===0?3600:i===1?3300:i===2?3000:900);render();}
+}
+
+function taskTop(name,level,num,total,desc){
+  return `<div class="container"><div class="headerline" style="padding:0 0 15px 0;border:0"><div><h1 class="title">${esc(name)} <span class="badge">${esc(level)}</span></h1><div class="small">${esc(desc)}</div></div><div><b>${num}/${total}</b></div></div><div class="progress"><div style="width:${(num/total)*100}%"></div></div>`;
+}
+function nav(nextLabel='Siguiente',back=false){
+  return `<div class="nav">${back?'<button class="secondary" onclick="prevTask()">Anterior</button>':'<span></span>'}<button class="primary" onclick="nextTask()">${nextLabel}</button></div></div>`;
+}
+function prevTask(){if(taskIndex>0){taskIndex--;render();}}
+function nextTask(){
+  taskIndex++;
+  const max = section===0?5:section===1?6:section===2?2:5;
+  if(taskIndex>=max){finishSection();return;}
+  render();
+}
+function finishSection(){
+  if(section===0){section=1;taskIndex=0;startGlobal(3300);render();}
+  else if(section===1){section=2;taskIndex=0;startGlobal(3000);render();}
+  else if(section===2){section=3;taskIndex=0;startGlobal(900);render();}
+  else showResults();
+}
+
+function renderReading(){
+  let body='';
+  if(taskIndex===0){
+    body=taskTop('Comprensión de lectura','TAREA 1 · A1',1,5,'Cinco textos breves · información general y específica');
+    body+=`<div class="card"><b>Instrucción:</b> Usted va a leer cinco textos breves. Elija la opción correcta para cada pregunta.</div>`;
+    DATA.reading.t1.forEach((x,i)=>{
+      body+=`<div class="question"><div class="small">Texto ${i+1}</div><p>${esc(x.text)}</p><h3>${i+1}. ${esc(x.q)}</h3><div class="options">${x.opts.map((o,j)=>`<label><input type="radio" name="r1_${i}" value="${j}" onchange="saveR('r1_${i}',${j})"> ${esc(o)}</label>`).join('')}</div></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===1){
+    body=taskTop('Comprensión de lectura','TAREA 2 · A2',2,5,'Un texto extenso · ideas principales e información específica');
+    body+=`<div class="card"><p>${esc(DATA.reading.t2.text)}</p></div>`;
+    DATA.reading.t2.qs.forEach((x,i)=>{
+      body+=`<div class="question"><h3>${i+1}. ${esc(x[0])}</h3><div class="options">${x[1].map((o,j)=>`<label><input type="radio" name="r2_${i}" value="${j}" onchange="saveR('r2_${i}',${j})"> ${esc(o)}</label>`).join('')}</div></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===2){
+    body=taskTop('Comprensión de lectura','TAREA 3 · B1',3,5,'Tres textos · relacionar información específica');
+    body+=`<div class="card">${esc(DATA.reading.t3.intro)}<div class="grid2" style="margin-top:14px">${DATA.reading.t3.texts.map(x=>`<div><h3>${esc(x[0])}</h3><p>${esc(x[1])}</p></div>`).join('')}</div></div>`;
+    DATA.reading.t3.qs.forEach((q,i)=>{
+      body+=`<div class="selectrow itemrow"><b>${i+1}. ${esc(q[0])}</b><select onchange="saveR('r3_${i}',this.value)"><option value="">--Elija--</option><option value="0">Clara</option><option value="1">Diego</option><option value="2">Marta</option></select></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===3){
+    body=taskTop('Comprensión de lectura','TAREA 4 · B2',4,5,'Dos textos incompletos · reconstrucción de estructura y relaciones');
+    DATA.reading.t4.texts.forEach((t,ti)=>{
+      let gap=0;
+      const parts=t.body.split('__________');
+      let para='';
+      parts.forEach((part,idx)=>{
+        para += esc(part);
+        if(idx<parts.length-1){
+          const key=`r4_${ti}_${gap}`;
+          para += `<select class="gapselect" onchange="saveR('${key}',this.value)"><option value="">--Elija--</option>${t.frags.map((f,j)=>`<option value="${j}">${String.fromCharCode(97+j)}) ${esc(f)}</option>`).join('')}</select>`;
+          gap++;
+        }
+      });
+      body+=`<div class="card"><h2>${esc(t.title)}</h2><p>${para}</p><div class="small">Hay cinco fragmentos posibles; uno no se utiliza.</div></div>`;
+    });
+    body+=nav();
+  } else {
+    body=taskTop('Comprensión de lectura','TAREA 5 · C1',5,5,'Texto especializado · gramática, léxico y cohesión');
+    body+=`<div class="card">${DATA.reading.t5.text.replace(/\\n/g,'<br>')}</div>`;
+    // Convert (n) markers into selects.
+    const htmlText = DATA.reading.t5.text.replace(/\n/g,'<br>').replace(/\(\d+\)/g,(m)=>{
+      const n=parseInt(m.match(/\d+/)[0],10);
+      const opts=DATA.reading.t5.opts[n-1];
+      return `<select onchange="saveR('r5_${n}',this.value)" style="min-width:180px"><option value="">--Elija--</option>${opts.map((o,j)=>`<option value="${j}">${esc(o)}</option>`).join('')}</select>`;
+    });
+    body=taskTop('Comprensión de lectura','TAREA 5 · C1',5,5,'Texto especializado · gramática, léxico y cohesión')+`<div class="card"><p>${htmlText}</p></div>`+nav('Finalizar lectura');
+  }
+  S('app').innerHTML=shell(body,'Comprensión de lectura','gold',0);
+  hydrate();
+}
+function saveR(k,v){answers.reading[k]=Number(v);}
+function hydrate(){
+  // rehydrate radio/select values
+  for(const k in answers.reading){
+    const els=document.querySelectorAll(`[onchange*="${k}"]`);
+    els.forEach(e=>{if(e.tagName==='SELECT')e.value=String(answers.reading[k]); else if(e.value==answers.reading[k])e.checked=true;});
+  }
+}
+
+function renderListening(){
+  let body='';
+  if(taskIndex===0){
+    body=taskTop('Comprensión auditiva','TAREA 1 · A1',1,6,'Una conversación · completar 5 enunciados a partir de 15 opciones');
+    body+=`<div class="card"><p>Va a escuchar el diálogo dos veces. Pulse el botón de audio una vez para la primera escucha y de nuevo para la segunda.</p><button class="primary" onclick="speakOnce('l1')">🔊 Escuchar</button><span id="playCount_l1" class="badge">0/2</span></div>`;
+    DATA.listening.t1.items.forEach((it,i)=>{
+      body+=`<div class="selectrow itemrow"><b>${i+1}. ${esc(it[0])}</b><select onchange="saveL('l1_'+i,this.value)"><option value="">--Elija--</option>${DATA.listening.t1.options.map((o,j)=>`<option value="${j}">${esc(o)}</option>`).join('')}</select></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===1){
+    body=taskTop('Comprensión auditiva','TAREA 2 · A2',2,6,'Cinco fragmentos breves · idea general e información específica');
+    body+=`<div class="notice"><b>Audio:</b> cada fragmento puede escucharse dos veces. Después responde a la pregunta.</div>`;
+    DATA.listening.t2.items.forEach((it,i)=>{
+      const id='l2_'+i;
+      body+=`<div class="question"><div class="record"><button class="secondary" onclick="speakOnce('${id}')">🔊 Escuchar</button><span id="playCount_${id}" class="badge">0/2</span></div><h3>${i+1}. ${esc(it.q)}</h3><div class="options">${it.opts.map((o,j)=>`<label><input type="radio" name="${id}" value="${j}" onchange="saveL('${id}',${j})"> ${esc(o)}</label>`).join('')}</div></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===2){
+    body=taskTop('Comprensión auditiva','TAREA 3 · B1',3,6,'Ocho personas · relacionar cada intervención con 8 de 11 opciones');
+    body+=`<div class="card"><p>${esc(DATA.listening.t3.theme)}</p><button class="primary" onclick="speakSeries3()">▶ Iniciar audio</button><span class="badge">Cada persona: 2 escuchas</span></div>`;
+    body+=`<div class="grid2"><div class="card"><h3>Opciones</h3>${DATA.listening.t3.options.map((o,i)=>`<div class="fragment"><b>${i+1}.</b> ${esc(o)}</div>`).join('')}</div><div class="card"><h3>Respuestas</h3>${DATA.listening.t3.scripts.map((_,i)=>`<div class="selectrow"><b>Persona ${i+1}</b><select onchange="saveL('l3_'+i,this.value)"><option value="">--Elija--</option>${DATA.listening.t3.options.map((o,j)=>`<option value="${j}">${j+1}. ${esc(o)}</option>`).join('')}</select></div>`).join('')}</div></div>`;
+    body+=nav();
+  } else if(taskIndex===3){
+    body=taskTop('Comprensión auditiva','TAREA 4 · B2',4,6,'Entrevista extensa · 8 preguntas de opción múltiple');
+    body+=`<div class="card"><button class="primary" onclick="speakOnce('l4')">🔊 Escuchar entrevista</button><span id="playCount_l4" class="badge">0/2</span></div>`;
+    DATA.listening.t4.qs.forEach((it,i)=>{
+      body+=`<div class="question"><h3>${i+1}. ${esc(it[0])}</h3><div class="options">${it[1].map((o,j)=>`<label><input type="radio" name="l4_${i}" value="${j}" onchange="saveL('l4_${i}',${j})"> ${esc(o)}</label>`).join('')}</div></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===4){
+    body=taskTop('Comprensión auditiva','TAREA 5 · B2-C1',5,6,'Seis fragmentos de una conferencia · una idea correcta en cada fragmento');
+    body+=`<div class="card"><button class="primary" onclick="speakSeries5()">▶ Reproducir los 6 fragmentos</button><span class="badge">2 escuchas por fragmento</span></div>`;
+    DATA.listening.t5.fragments.forEach((f,i)=>{
+      body+=`<div class="question"><h3>Fragmento ${i+1}</h3><div class="options">${f.opts.map((o,j)=>`<label><input type="radio" name="l5_${i}" value="${j}" onchange="saveL('l5_${i}',${j})"> ${esc(o)}</label>`).join('')}</div></div>`;
+    });
+    body+=nav();
+  } else {
+    body=taskTop('Comprensión auditiva','TAREA 6 · C1',6,6,'Conferencia extensa · seleccionar 6 de 12 ideas');
+    body+=`<div class="card"><button class="primary" onclick="speakOnce('l6')">🔊 Escuchar conferencia</button><span id="playCount_l6" class="badge">0/2</span></div>`;
+    DATA.listening.t6.options.forEach((o,i)=>{
+      body+=`<label class="fragment"><input type="checkbox" onchange="toggleL6(${i},this.checked)"> ${i+1}. ${esc(o)}</label>`;
+    });
+    body+=nav('Finalizar auditiva');
+  }
+  S('app').innerHTML=shell(body,'Comprensión auditiva','gold',1);
+  hydrateL();
+}
+function saveL(k,v){answers.listening[k]=Number(v);}
+function hydrateL(){
+  for(const k in answers.listening){
+    document.querySelectorAll(`[onchange*="${k}"]`).forEach(e=>{if(e.tagName==='SELECT')e.value=String(answers.listening[k]); else if(e.value==answers.listening[k])e.checked=true;});
+  }
+  const sel=answers.listening.l6||[];
+  sel.forEach(i=>{const c=document.querySelectorAll('input[type=checkbox]')[i]; if(c)c.checked=true;});
+}
+function toggleL6(i,on){let arr=answers.listening.l6||[];arr=arr.filter(x=>x!==i);if(on)arr.push(i);answers.listening.l6=arr;}
+function speakText(txt,id){
+  if(!('speechSynthesis' in window)){alert('Este navegador no ofrece síntesis de voz.');return;}
+  window.speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(txt);
+  u.lang = Math.random()>.5 ? 'es-ES' : 'es-MX';
+  u.rate=speechRate(); u.pitch=1;
+  window.speechSynthesis.speak(u);
+}
+function speakOnce(id){
+  let text='';
+  if(id==='l1')text=DATA.listening.t1.script;
+  else if(id==='l4')text=DATA.listening.t4.script;
+  else if(id==='l6')text=DATA.listening.t6.script;
+  else if(id.startsWith('l2_'))text=DATA.listening.t2.items[Number(id.split('_')[1])].script;
+  listeningPlays[id]=(listeningPlays[id]||0)+1;
+  if(listeningPlays[id]>2){listeningPlays[id]=2;alert('En modo examen, cada audio solo tiene dos escuchas.');return;}
+  const b=document.querySelector('#playCount_'+id);if(b)b.textContent=listeningPlays[id]+'/2';
+  speakText(text,id);
+}
+async function speakSeries3(){
+  for(let r=0;r<2;r++){for(let i=0;i<DATA.listening.t3.scripts.length;i++){await speakWait(DATA.listening.t3.scripts[i]);await sleep(2500);}}
+}
+async function speakSeries5(){
+  for(let r=0;r<2;r++){for(let i=0;i<DATA.listening.t5.fragments.length;i++){await speakWait(DATA.listening.t5.fragments[i].script);await sleep(1600);}}
+}
+function speakWait(t,id){return new Promise(resolve=>{if(!('speechSynthesis'in window)){resolve();return;}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=Math.random()>.5?'es-ES':'es-MX';u.rate=speechRate();u.onend=()=>resolve();speechSynthesis.speak(u);});}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function renderWriting(){
+  let body='';
+  if(taskIndex===0){
+    body=taskTop('Expresión e interacción escritas','TAREA 1 · A1-B1',1,2,'100–150 palabras recomendadas · responder a un mensaje');
+    body+=`<div class="card"><p>${esc(DATA.writing.t1.prompt)}</p></div><div class="card"><h3>Debe incluir</h3><ol>${DATA.writing.t1.instructions.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div><textarea id="w1" placeholder="Escriba aquí su respuesta..." oninput="saveW('t1',this.value)"></textarea><div class="wordcount" id="wc1">0 palabras</div>`;
+    body+=`<div class="notice">Objetivo de entrenamiento: responder a todos los puntos, mantener cohesión, controlar gramática/ortografía y adaptar el registro.</div>`;
+    body+=nav();
+  } else {
+    body=taskTop('Expresión e interacción escritas','TAREA 2 · B2-C1',2,2,'250–300 palabras recomendadas · elegir 1 de 2 opciones');
+    body+=`<div class="grid2">${DATA.writing.t2.options.map((o,i)=>`<div class="card"><h3>${esc(o.title)}</h3><p>${esc(o.prompt)}</p><button class="${writings.t2choice===i?'primary':'secondary'}" onclick="writings.t2choice=${i};render()">Elegir esta opción</button></div>`).join('')}</div>`;
+    body+=`<div class="card"><h3>Pautas</h3><ol>${DATA.writing.t2.instructions.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></div>`;
+    body+=`<textarea id="w2" placeholder="Escriba aquí su texto..." oninput="saveW('t2',this.value)"></textarea><div class="wordcount" id="wc2">0 palabras</div>`;
+    body+=nav('Finalizar escrita');
+  }
+  S('app').innerHTML=shell(body,'Expresión e interacción escritas','blue',2);
+  const w1=S('w1'); if(w1){w1.value=writings.t1;countWords('w1','wc1');}
+  const w2=S('w2'); if(w2){w2.value=writings.t2;countWords('w2','wc2');}
+}
+function saveW(k,v){writings[k]=v;countWords(k==='t1'?'w1':'w2',k==='t1'?'wc1':'wc2');}
+function countWords(id,cid){const e=S(id),c=S(cid);if(e&&c){const n=e.value.trim()?e.value.trim().split(/\s+/).length:0;c.textContent=n+' palabras';}}
+
+function renderOral(){
+  let body='';
+  if(taskIndex===0){
+    body=taskTop('Expresión e interacción orales','TAREA 1 · A1-A2',1,5,'Cuatro preguntas personales · 15/15/30/30 s de respuesta');
+    body+=`<div class="notice">En una prueba real, las preguntas son locutadas. En esta app puede escucharlas con el botón. Cada pregunta se puede escuchar hasta dos veces.</div>`;
+    DATA.oral.t1.forEach((q,i)=>{
+      body+=`<div class="question"><h3>Pregunta ${i+1}</h3><button class="secondary" onclick="speakText(${JSON.stringify(q[0])})">🔊 Escuchar pregunta</button><span class="badge">máx. ${q[1]} s</span><div class="record" style="margin-top:12px"><button class="primary" onclick="startRecord(${q[1]},'oral_t1_'+${i})">🎙 Grabar</button><button class="secondary" onclick="stopRecord()">Detener</button><span id="recState_oral_t1_${i}" class="small"></span></div><textarea style="min-height:110px" placeholder="Notas / transcripción opcional..." oninput="oralNotes.t1[${i}]=this.value">${esc(oralNotes.t1[i]||'')}</textarea></div>`;
+    });
+    body+=nav();
+  } else if(taskIndex===1){
+    body=taskTop('Expresión e interacción orales','TAREA 2 · A2',2,5,'Descripción de fotografía · 2 min preparación + 1–2 min respuesta');
+    body+=`<div class="card"><p>Elija una fotografía y describa los cinco aspectos indicados.</p><div class="grid2">${DATA.oral.t2.scenes.map((s,i)=>`<div class="photo"><h3>${esc(s.title)}</h3>${s.svg}<button class="secondary" onclick="selectedT2=${i};saveOralNote()">Elegir</button></div>`).join('')}</div></div>`;
+    body+=`<div class="card"><b>Puntos que debe comentar</b><ul>${DATA.oral.t2.instructions.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p class="small">Prepare 2 minutos. Después hable durante 1–2 minutos.</p></div>`;
+    body+=`<textarea style="min-height:160px" placeholder="Notas para preparar la descripción..." oninput="oralNotes.t2=this.value">${esc(oralNotes.t2)}</textarea>`;
+    body+=nav();
+  } else if(taskIndex===2){
+    body=taskTop('Expresión e interacción orales','TAREA 3 · B1',3,5,'Duas situações simuladas · uma pessoal e uma pública');
+    body+=`<div class="grid2">`;
+    ['private','public'].forEach(kind=>{
+      body+=`<div class="card"><h2>${kind==='private'?'Parte I · Ámbito personal':'Parte II · Ámbito público'}</h2>${DATA.oral.t3[kind].map((o,i)=>`<div class="itemrow"><button class="secondary" onclick="saveOralChoice('${kind}',${i})">${esc(o.title)}</button><ul>${o.points.map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div>`).join('')}</div>`;
+    });
+    body+=`</div><div class="card"><b>Extensión:</b> hasta 1 min 30 s por situación. Hable como si se dirigiera a un interlocutor real.</div><textarea placeholder="Notas / transcripción opcional — parte personal..." oninput="oralNotes.t3private=this.value">${esc(oralNotes.t3private)}</textarea><br><br><textarea placeholder="Notas / transcripción opcional — parte pública..." oninput="oralNotes.t3public=this.value">${esc(oralNotes.t3public)}</textarea>`;
+    body+=nav();
+  } else if(taskIndex===3){
+    body=taskTop('Expresión e interacción orales','TAREA 4 · B2',4,5,'Elegir tema · leer texto · responder 3 preguntas, 1 min cada una');
+    body+=`<div class="grid2">${DATA.oral.t4.topics.map((t,i)=>`<div class="card"><h2>${esc(t.title)}</h2><p>${esc(t.text)}</p><button class="secondary" onclick="selectedT4=${i};render()">Elegir</button></div>`).join('')}</div>`;
+    const t=DATA.oral.t4.topics[selectedT4];
+    body+=`<div class="card"><h3>Tema seleccionado: ${esc(t.title)}</h3>${t.questions.map((q,i)=>`<div class="question"><button class="secondary" onclick="speakText(${JSON.stringify(q)})">🔊 Pregunta ${i+1}</button><span class="badge">máx. 1 min</span><textarea style="min-height:120px" placeholder="Notas / transcripción opcional..." oninput="oralNotes.t4[${i}]=this.value">${esc(oralNotes.t4[i]||'')}</textarea></div>`).join('')}</div>`;
+    body+=nav();
+  } else {
+    body=taskTop('Expresión e interacción orales','TAREA 5 · C1',5,5,'2 min de preparación + 3–4 min de argumentación');
+    const t=DATA.oral.t5['topic'+(selectedT4+1)];
+    body+=`<div class="card"><h2>Seleccione una afirmación</h2>${t.map((x,i)=>`<label class="fragment"><input type="radio" name="o5" ${oralChoice5===x?'checked':''} onchange="oralChoice5=${JSON.stringify(x)}"> ${esc(x)}</label>`).join('')}</div>`;
+    body+=`<div class="notice"><b>Debe:</b> presentar su posición, justificarla con argumentos, dar ejemplos y cerrar con una conclusión clara.</div><textarea placeholder="Notas para preparar la argumentación..." oninput="oralNotes.t5=this.value">${esc(oralNotes.t5)}</textarea>`;
+    body+=`<div class="record" style="margin-top:15px"><button class="primary" onclick="startRecord(${Math.round(240*timeMult())},'oral_t5')">🎙 Grabar 3–4 min</button><button class="secondary" onclick="stopRecord()">Detener</button><span id="recState_oral_t5" class="small"></span></div>`;
+    body+=nav('Finalizar oral');
+  }
+  S('app').innerHTML=shell(body,'Expresión e interacción orales','orange',3);
+}
+let selectedT2=0;
+function saveOralNote(){}
+function saveOralChoice(kind,i){oralNotes['choice_'+kind]=i;render();}
+async function startRecord(seconds,id){
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder=new MediaRecorder(stream); recordedChunks=[];
+    mediaRecorder.ondataavailable=e=>{if(e.data.size)recordedChunks.push(e.data);}
+    mediaRecorder.onstop=()=>{const blob=new Blob(recordedChunks,{type:'audio/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=id+'.webm';a.textContent='Baixar gravação';a.className='secondary';a.style.marginLeft='8px';document.body.appendChild(a);stream.getTracks().forEach(t=>t.stop());};
+    mediaRecorder.start();
+    let left=Math.max(1,Math.round(seconds));const target='recState_'+id;const e=S(target);if(e)e.textContent='Grabando: '+fmt(left);
+    clearInterval(recordTimer);recordTimer=setInterval(()=>{left--;if(e)e.textContent='Grabando: '+fmt(left);if(left<=0)stopRecord();},1000);
+  }catch(err){alert('O navegador não liberou o microfone. Você ainda pode fazer a tarefa com o cronômetro e gravar pelo Gravador do iPad.');}
+}
+function stopRecord(){if(mediaRecorder&&mediaRecorder.state!=='inactive'){mediaRecorder.stop();}clearInterval(recordTimer);}
+
+function scoreReading(){
+  let correct=0,total=38,by={A1:0,A2:0,B1:0,B2:0,C1:0};
+  DATA.reading.t1.forEach((x,i)=>{if(answers.reading['r1_'+i]===x.a){correct++;by.A1++;}});
+  DATA.reading.t2.qs.forEach((x,i)=>{if(answers.reading['r2_'+i]===x[2]){correct++;by.A2++;}});
+  DATA.reading.t3.qs.forEach((x,i)=>{if(answers.reading['r3_'+i]===x[2]){correct++;by.B1++;}});
+  DATA.reading.t4.texts.forEach((t,ti)=>t.answers.forEach((a,j)=>{const key='r4_'+ti+'_'+j; /* cloze selects are not uniquely named in this compact build; score via visible order omitted */}));
+  // T4 and T5 are scored from explicit select elements in DOM if available; for final report use stored values when present.
+  // We maintain separate keys from event binding when the user changes a gap.
+  DATA.reading.t5.answers.forEach((a,i)=>{if(answers.reading['r5_'+(i+1)]===a){correct++;by.C1++;}});
+  // T4 not robustly keyed in this first-pass app; award exact items only when keys exist.
+  let t4c=0;
+  DATA.reading.t4.texts.forEach((t,ti)=>t.answers.forEach((a,j)=>{const val=answers.reading['r4_'+ti+'_'+j];if(Number(val)===a)t4c++;}));
+  correct+=t4c;by.B2+=t4c;
+  return {correct,total,by};
+}
+
+function indicativeLevel(totalCorrect,total){
+  const pct=totalCorrect/total*100;
+  if(pct>=80) return 'C1';
+  if(pct>=65) return 'B2';
+  if(pct>=50) return 'B1';
+  if(pct>=35) return 'A2';
+  return 'A1';
+}
+function skillProfileReading(r){
+  const levels=[['A1',r.by.A1,5],['A2',r.by.A2,5],['B1',r.by.B1,8],['B2',r.by.B2,8],['C1',r.by.C1,12]];
+  let lvl='A1';
+  for(const [name,c,n] of levels){ if(c/n>=0.6) lvl=name; }
+  return lvl;
+}
+function skillProfileListening(l){
+  const levels=[['A1',l.by.A1,5],['A2',l.by.A2,5],['B1',l.by.B1,8],['B2',l.by.B2,8],['C1',l.by.C1,6]];
+  let lvl='A1';
+  for(const [name,c,n] of levels){ if(c/n>=0.6) lvl=name; }
+  return lvl;
+}
+function scoreListening(){
+  let correct=0,total=38,by={A1:0,A2:0,B1:0,B2:0,'B2-C1':0,C1:0};
+  DATA.listening.t1.items.forEach((x,i)=>{if(answers.listening['l1_'+i]===x[1]){correct++;by.A1++;}});
+  DATA.listening.t2.items.forEach((x,i)=>{if(answers.listening['l2_'+i]===x.a){correct++;by.A2++;}});
+  DATA.listening.t3.answers.forEach((a,i)=>{if(answers.listening['l3_'+i]===a){correct++;by.B1++;}});
+  DATA.listening.t4.qs.forEach((x,i)=>{if(answers.listening['l4_'+i]===x[2]){correct++;by.B2++;}});
+  DATA.listening.t5.fragments.forEach((x,i)=>{if(answers.listening['l5_'+i]===x.a){correct++;by['B2-C1']++;}});
+  const arr=answers.listening.l6||[]; DATA.listening.t6.answers.forEach(a=>{if(arr.includes(a)){correct++;by.C1++;}});
+  return {correct,total,by};
+}
+function showBlueprint(){
+  const body=`
+  <div class="container"><h1 class="title">Formato de referência</h1>
+  <div class="card"><h2>Comprensión de lectura</h2><p>5 tareas / 38 ítems / 60 min: T1 A1 (5), T2 A2 (5), T3 B1 (8), T4 B2 (8), T5 C1 (12).</p></div>
+  <div class="card"><h2>Comprensión auditiva</h2><p>6 tareas / 38 ítems / 55 min. Todos los audios del examen se escuchan dos veces. T1 A1 (5), T2 A2 (5), T3 B1 (8), T4 B2 (8), T5 B2-C1 (6), T6 C1 (6).</p></div>
+  <div class="card"><h2>Expresión escrita</h2><p>T1: respuesta a mensaje, 100–150 palabras recomendadas. T2: texto de opinión o carta a la redacción, 250–300 palabras recomendadas.</p><p>La evaluación considera <b>cumplimiento de la tarea, cohesión, corrección y alcance</b>; en la prueba escrita el cumplimiento pesa 34% y cada dimensión lingüística 22%.</p></div>
+  <div class="card"><h2>Expresión oral</h2><p>5 tareas: T1 preguntas personales; T2 descripción de foto; T3 dos situaciones simuladas; T4 tres preguntas sobre un tema; T5 argumentación C1.</p><p>La evaluación oral considera <b>uso de la lengua (66%)</b> y <b>cumplimiento de la tarea (34%)</b>.</p></div>
+  <div class="warn"><b>Importante:</b> la app corrige las respuestas cerradas y ahora muestra un <b>nivel indicativo de entrenamiento</b>. No reproduce el escalado oficial de puntos SIELE (0–250) ni sustituye el juicio de los calificadores para escritura/oralidad.</div>
+  <button class="primary" onclick="renderHome()">Volver</button></div>`;
+  S('app').innerHTML=header('SIELE Global — estrutura','gold')+body;
+}
+function showResults(){
+  clearInterval(timerHandle); if('speechSynthesis'in window)speechSynthesis.cancel();
+  const r=scoreReading(),l=scoreListening();
+  const writingWords1=(writings.t1.trim()?writings.t1.trim().split(/\s+/).length:0);
+  const writingWords2=(writings.t2.trim()?writings.t2.trim().split(/\s+/).length:0);
+  const body=`${header('Resultados del simulado','gold')}
+  <div class="container results">
+    <h1 class="title">Resultado do treino</h1>
+    <div class="notice"><b>Modo:</b> ${modeLabel()}. Os percentuais abaixo são indicadores de treino, não uma conversão oficial de pontos SIELE.</div>
+    <div class="kpi">
+      <div class="card"><div>Lectura</div><div class="big">${r.correct}/${r.total}</div><div>${Math.round(r.correct/r.total*100)}%</div></div>
+      <div class="card"><div>Auditiva</div><div class="big">${l.correct}/${l.total}</div><div>${Math.round(l.correct/l.total*100)}%</div></div>
+      <div class="card"><div>Producción</div><div class="big">2 + 5</div><div>tareas abiertas</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h3>Nível indicativo — leitura</h3><div class="timerLarge">${skillProfileReading(r)}</div><p class="small">Estimativa interna baseada no desempenho por faixa de tarefa; não é a nota oficial SIELE.</p></div>
+      <div class="card"><h3>Nível indicativo — auditiva</h3><div class="timerLarge">${skillProfileListening(l)}</div><p class="small">Estimativa interna baseada no desempenho por faixa de tarefa; não é a nota oficial SIELE.</p></div>
+    </div>
+    <div class="card"><h3>Estimativa global de compreensão</h3><div class="big">${indicativeLevel(r.correct+l.correct,r.total+l.total)}</div><p>Use este nível apenas como referência de treino. A classificação oficial depende das pontuações escaladas e das provas de produção.</p></div>
+    <h2>Perfil por nivel de tarea</h2>
+    <table><tr><th>Prueba</th><th>A1</th><th>A2</th><th>B1</th><th>B2</th><th>C1</th></tr>
+    <tr><td>Lectura</td><td>${r.by.A1}/5</td><td>${r.by.A2}/5</td><td>${r.by.B1}/8</td><td>${r.by.B2}/8</td><td>${r.by.C1}/12</td></tr>
+    <tr><td>Auditiva</td><td>${l.by.A1}/5</td><td>${l.by.A2}/5</td><td>${l.by.B1}/8</td><td>${l.by.B2}/8</td><td>${l.by.C1}/6</td></tr></table>
+    <h2>Producción escrita</h2>
+    <p>Tarea 1: <b>${writingWords1}</b> palabras. Tarea 2: <b>${writingWords2}</b> palabras. Estas respuestas requieren evaluación humana por cumplimiento, cohesión, corrección y alcance.</p>
+    <h2>Producción oral</h2>
+    <p>Complete las cinco tareas y grabe sus respuestas. El botón de grabación depende de los permisos de micrófono del navegador; en iPad puede ser más fiable usar el Grabador del sistema.</p>
+    <div class="card"><h3>Como usar seu resultado</h3><p>Para uma avaliação detalhada, envie seus dois textos e as gravações/transcrições das cinco tarefas orais. Eu posso corrigir com a rubrica correspondente e apontar exatamente o que está segurando seu nível.</p></div>
+    <button class="primary" onclick="downloadResults()">Baixar resultados</button>
+    <button class="secondary" style="margin-left:10px" onclick="renderHome()">Novo simulado</button>
+  </div>`;
+  S('app').innerHTML=body;
+}
+function downloadResults(){
+  const r=scoreReading(),l=scoreListening();
+  const txt=`SIELE SIMULADO — ${modeLabel()}
+Lectura: ${r.correct}/${r.total} = ${Math.round(r.correct/r.total*100)}%
+Auditiva: ${l.correct}/${l.total} = ${Math.round(l.correct/l.total*100)}%
+Escrita T1: ${writings.t1}
+Escrita T2: ${writings.t2}
+Oral T1 notas: ${oralNotes.t1.join(' | ')}
+Oral T2 notas: ${oralNotes.t2}
+Oral T3 personal: ${oralNotes.t3private}
+Oral T3 pública: ${oralNotes.t3public}
+Oral T4: ${oralNotes.t4.join(' | ')}
+Oral T5: ${oralNotes.t5}`;
+  const blob=new Blob([txt],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='resultado_siele_simulado.txt';a.click();URL.revokeObjectURL(url);
+}
+render();
+</script>
+</body>
+</html>
