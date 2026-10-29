@@ -45,5 +45,6 @@ scratch_tmp/
 .claude/settings.local.json
 
 # credenciais e codigos gerados localmente
+ACESSOS.txt
 ACESSO-PROFESSORA.txt
 CODIGOS-ESTUDANTES.txt
