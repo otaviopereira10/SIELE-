@@ -50,6 +50,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "postgres": "^4.0.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^4.3.3",

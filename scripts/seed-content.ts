@@ -31,6 +31,12 @@ const transcriptOf = (file: string) =>
 
 const MIME: Record<string, string> = { ".mp3": "audio/mpeg", ".png": "image/png", ".jpg": "image/jpeg", ".webp": "image/webp" };
 
+/** Para inserciones sin `.select()`: solo comprueba el error (los datos vienen vacíos). */
+async function ok(label: string, p: PromiseLike<{ error: unknown }>): Promise<void> {
+  const { error } = await p;
+  if (error) throw new Error(`${label}: ${JSON.stringify(error)}`);
+}
+
 async function must<T>(label: string, p: PromiseLike<{ data: T; error: unknown }>): Promise<NonNullable<T>> {
   const { data, error } = await p;
   if (error || data == null) throw new Error(`${label}: ${JSON.stringify(error ?? "sin datos")}`);
@@ -146,7 +152,7 @@ async function seedExam(exam: SeedExam) {
       );
       const transcript = (task.transcript_from ?? []).map(transcriptOf).join("\n\n");
       if (transcript || task.teacher_notes) {
-        await must("privado", db.from("task_private").insert({ task_id: t.id, transcript, teacher_notes: task.teacher_notes ?? "" }));
+        await ok("privado", db.from("task_private").insert({ task_id: t.id, transcript, teacher_notes: task.teacher_notes ?? "" }));
       }
       const bankIds: string[] = [];
       for (const [bi, o] of (task.bank ?? []).entries()) {
@@ -170,7 +176,7 @@ async function seedExam(exam: SeedExam) {
         const pool = q.options?.length ? own : bankIds;
         const correct = (Array.isArray(q.correct) ? q.correct : [q.correct]).map((i) => pool[i]);
         if (correct.some((c) => !c)) throw new Error(`Clave fuera de rango en ${task.code} pregunta ${qi + 1}`);
-        await must("clave", db.from("question_keys").insert({ question_id: qr.id, correct_option_ids: correct, explanation: q.explanation }));
+        await ok("clave", db.from("question_keys").insert({ question_id: qr.id, correct_option_ids: correct, explanation: q.explanation }));
       }
       console.log(`  ✓ ${task.code}`);
     }

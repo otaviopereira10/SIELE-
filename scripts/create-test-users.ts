@@ -47,10 +47,11 @@ if (cls) {
   const { data: version } = await db.from("exam_versions").select("id").eq("status", "published").order("published_at", { ascending: false }).limit(1).maybeSingle();
   const teacher = created.find((c) => c.role === "teacher");
   if (version && teacher) {
-    await db.from("exam_assignments").insert([
-      { version_id: version.id, title: "Simulacro completo (formal)", class_id: cls.id, mode: "formal", created_by: teacher.id, max_attempts: 2 },
+    const { error: asgError } = await db.from("exam_assignments").insert([
+      { version_id: version.id, title: "Simulacro completo (formal)", class_id: cls.id, mode: "formal", immediate_feedback: false, created_by: teacher.id, max_attempts: 2 },
       { version_id: version.id, title: "Práctica con corrección inmediata", class_id: cls.id, mode: "practice", immediate_feedback: true, created_by: teacher.id, max_attempts: 5 },
     ]);
+    if (asgError) console.error(`No se pudieron asignar los simulacros: ${asgError.message}`);
   }
 }
 
