@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <!-- Ilustración original para SIELE Trainer Pro: familia en un parque -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8cc8f0"/><stop offset="1" stop-color="#dff1fb"/></linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <circle cx="1050" cy="110" r="55" fill="#ffd54a"/>
+  <g fill="#ffffff" opacity="0.9"><ellipse cx="250" cy="110" rx="80" ry="28"/><ellipse cx="310" cy="95" rx="60" ry="30"/><ellipse cx="700" cy="70" rx="70" ry="24"/></g>
+  <!-- colinas y césped -->
+  <path d="M0 420 q300 -90 600 -10 t600 -30 v420 h-1200z" fill="#8fc56b"/>
+  <rect y="470" width="1200" height="330" fill="#7cb85a"/>
+  <!-- lago al fondo -->
+  <ellipse cx="900" cy="470" rx="260" ry="40" fill="#6cb4d9"/>
+  <!-- árbol grande -->
+  <rect x="120" y="260" width="45" height="260" fill="#6b4a2f"/>
+  <g fill="#4f9a3e"><circle cx="140" cy="230" r="95"/><circle cx="70" cy="290" r="70"/><circle cx="215" cy="285" r="75"/></g>
+  <!-- banco con abuelo leyendo -->
+  <g>
+    <rect x="860" y="520" width="240" height="18" fill="#8b5e3c"/>
+    <rect x="860" y="480" width="240" height="14" fill="#8b5e3c"/>
+    <rect x="875" y="538" width="12" height="55" fill="#444"/><rect x="1075" y="538" width="12" height="55" fill="#444"/>
+    <circle cx="980" cy="420" r="34" fill="#e8bd98"/>
+    <path d="M948 412 q32 -45 66 0 q-6 -30 -33 -30 q-27 0 -33 30z" fill="#eeeeee"/>
+    <rect x="950" y="455" width="62" height="80" rx="12" fill="#5b7fa6"/>
+    <rect x="955" y="535" width="20" height="60" fill="#5a4b3c"/><rect x="988" y="535" width="20" height="60" fill="#5a4b3c"/>
+    <rect x="940" y="480" width="80" height="50" fill="#f5f0e1" stroke="#999" stroke-width="2"/>
+    <line x1="980" y1="480" x2="980" y2="530" stroke="#999" stroke-width="2"/>
+    <circle cx="970" cy="422" r="3.5" fill="#222"/><circle cx="990" cy="422" r="3.5" fill="#222"/>
+  </g>
+  <!-- manta de picnic -->
+  <path d="M260 600 l420 -10 l60 150 l-520 15z" fill="#e45b5b"/>
+  <g stroke="#ffffff" stroke-width="10" opacity="0.8">
+    <line x1="330" y1="598" x2="300" y2="752"/><line x1="420" y1="596" x2="410" y2="749"/><line x1="510" y1="594" x2="520" y2="747"/><line x1="600" y1="592" x2="630" y2="745"/>
+    <line x1="275" y1="640" x2="690" y2="630"/><line x1="290" y1="690" x2="710" y2="680"/>
+  </g>
+  <!-- cesta y comida -->
+  <rect x="560" y="560" width="90" height="60" rx="10" fill="#c99b5f"/>
+  <path d="M570 560 q35 -50 70 0" stroke="#8b6a3e" stroke-width="7" fill="none"/>
+  <circle cx="470" cy="660" r="26" fill="#ffffff"/><circle cx="470" cy="660" r="18" fill="#f2c14e"/>
+  <rect x="520" y="640" width="16" height="40" rx="4" fill="#4caf50"/>
+  <!-- madre sentada -->
+  <g>
+    <circle cx="360" cy="500" r="36" fill="#d79c73"/>
+    <path d="M322 500 q38 -70 76 0 q0 60 -10 75 l-12 -60 q-16 -22 -32 0 l-12 60 q-10 -15 -10 -75z" fill="#5a2e1b"/>
+    <circle cx="348" cy="503" r="3.5" fill="#222"/><circle cx="372" cy="503" r="3.5" fill="#222"/>
+    <path d="M348 520 q12 10 24 0" stroke="#8a3b2a" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+    <path d="M320 640 q0 -90 40 -100 q40 10 40 100z" fill="#f0a3c2"/>
+    <path d="M330 640 q60 10 110 0 l0 25 q-60 12 -110 0z" fill="#3b5a8a"/>
+    <path d="M395 570 q40 10 70 70" stroke="#d79c73" stroke-width="13" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- padre de pie con la cometa -->
+  <g>
+    <circle cx="780" cy="340" r="38" fill="#9c6b48"/>
+    <path d="M743 335 q37 -48 74 0 q-6 -28 -37 -30 q-31 2 -37 30z" fill="#1d1d1d"/>
+    <path d="M760 368 q20 24 40 0" fill="#1d1d1d"/>
+    <circle cx="768" cy="340" r="3.5" fill="#222"/><circle cx="792" cy="340" r="3.5" fill="#222"/>
+    <rect x="748" y="380" width="64" height="120" rx="14" fill="#2f8f83"/>
+    <rect x="752" y="500" width="24" height="110" fill="#3d3d55"/><rect x="784" y="500" width="24" height="110" fill="#3d3d55"/>
+    <path d="M808 400 q40 -40 60 -110" stroke="#9c6b48" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <path d="M752 400 q-30 40 -20 90" stroke="#9c6b48" stroke-width="14" fill="none" stroke-linecap="round"/>
+    <!-- cometa -->
+    <line x1="868" y1="290" x2="640" y2="120" stroke="#555" stroke-width="2"/>
+    <path d="M640 60 l45 60 l-45 60 l-45 -60z" fill="#ff7043"/>
+    <path d="M640 60 v120 M595 120 h90" stroke="#ffffff" stroke-width="3"/>
+    <path d="M640 180 q-20 30 0 50 q20 25 -5 45" stroke="#3949ab" stroke-width="4" fill="none"/>
+  </g>
+  <!-- niña con pelota -->
+  <g>
+    <circle cx="560" cy="470" r="28" fill="#e7b48f"/>
+    <path d="M532 466 q28 -45 56 0 l6 30 l-12 -8 q-22 -32 -44 0 l-12 8z" fill="#b5651d"/>
+    <circle cx="551" cy="473" r="3" fill="#222"/><circle cx="569" cy="473" r="3" fill="#222"/>
+    <path d="M550 486 q10 8 20 0" stroke="#8a3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M530 580 l10 -82 h40 l10 82z" fill="#ffd54a"/>
+    <rect x="540" y="580" width="14" height="40" fill="#e7b48f"/><rect x="566" y="580" width="14" height="40" fill="#e7b48f"/>
+    <path d="M583 515 q30 -10 45 -40" stroke="#e7b48f" stroke-width="10" fill="none" stroke-linecap="round"/>
+    <circle cx="640" cy="460" r="24" fill="#3fa7d6"/><path d="M618 452 q22 18 44 0" stroke="#ffffff" stroke-width="4" fill="none"/>
+  </g>
+  <!-- bicicleta infantil y flores -->
+  <g stroke="#c62828" stroke-width="6" fill="none"><circle cx="120" cy="690" r="32"/><circle cx="210" cy="690" r="32"/><path d="M120 690 l35 -55 h35 l20 55 M155 635 l15 55"/></g>
+  <g><circle cx="1000" cy="700" r="9" fill="#e91e63"/><circle cx="1030" cy="715" r="9" fill="#ffeb3b"/><circle cx="1060" cy="698" r="9" fill="#9c27b0"/><circle cx="1090" cy="712" r="9" fill="#ff9800"/></g>
+</svg>

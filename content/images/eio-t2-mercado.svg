@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <!-- Ilustración original para SIELE Trainer Pro: mercado al aire libre -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9d6f5"/><stop offset="1" stop-color="#e8f4fb"/></linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <!-- edificios del fondo -->
+  <rect x="0" y="120" width="230" height="420" fill="#e9c9a3"/>
+  <rect x="230" y="70" width="200" height="470" fill="#d98f6b"/>
+  <rect x="430" y="150" width="260" height="390" fill="#f1dcb5"/>
+  <rect x="690" y="90" width="220" height="450" fill="#c97b5f"/>
+  <rect x="910" y="140" width="290" height="400" fill="#e8d3a8"/>
+  <g fill="#7aa6c2" stroke="#ffffff" stroke-width="4">
+    <rect x="40" y="170" width="50" height="70"/><rect x="130" y="170" width="50" height="70"/>
+    <rect x="270" y="120" width="50" height="70"/><rect x="350" y="120" width="50" height="70"/>
+    <rect x="470" y="200" width="50" height="70"/><rect x="560" y="200" width="50" height="70"/>
+    <rect x="730" y="140" width="50" height="70"/><rect x="820" y="140" width="50" height="70"/>
+    <rect x="960" y="190" width="50" height="70"/><rect x="1060" y="190" width="50" height="70"/>
+  </g>
+  <g fill="#3e6b47"><rect x="480" y="268" width="60" height="10"/><rect x="740" y="208" width="60" height="10"/></g>
+  <!-- suelo -->
+  <rect y="540" width="1200" height="260" fill="#cfc2ad"/>
+  <g stroke="#b9ab94" stroke-width="3"><line x1="0" y1="600" x2="1200" y2="600"/><line x1="0" y1="680" x2="1200" y2="680"/><line x1="0" y1="760" x2="1200" y2="760"/></g>
+  <!-- puesto: toldo de rayas -->
+  <g>
+    <rect x="170" y="300" width="560" height="22" fill="#a33b2a"/>
+    <g>
+      <path d="M170 322 h80 v50 q-40 25 -80 0z" fill="#d9483b"/>
+      <path d="M250 322 h80 v50 q-40 25 -80 0z" fill="#fbf3e4"/>
+      <path d="M330 322 h80 v50 q-40 25 -80 0z" fill="#d9483b"/>
+      <path d="M410 322 h80 v50 q-40 25 -80 0z" fill="#fbf3e4"/>
+      <path d="M490 322 h80 v50 q-40 25 -80 0z" fill="#d9483b"/>
+      <path d="M570 322 h80 v50 q-40 25 -80 0z" fill="#fbf3e4"/>
+      <path d="M650 322 h80 v50 q-40 25 -80 0z" fill="#d9483b"/>
+    </g>
+    <rect x="182" y="372" width="12" height="260" fill="#6b4a2f"/>
+    <rect x="706" y="372" width="12" height="260" fill="#6b4a2f"/>
+    <!-- mostrador -->
+    <rect x="160" y="520" width="580" height="120" rx="6" fill="#8b5e3c"/>
+    <rect x="160" y="520" width="580" height="18" fill="#a6754e"/>
+    <!-- cajas de fruta -->
+    <rect x="190" y="470" width="150" height="60" fill="#c8a372"/>
+    <g fill="#e74c3c"><circle cx="215" cy="468" r="18"/><circle cx="250" cy="462" r="18"/><circle cx="285" cy="468" r="18"/><circle cx="318" cy="463" r="18"/><circle cx="232" cy="445" r="17"/><circle cx="270" cy="443" r="17"/><circle cx="303" cy="446" r="17"/></g>
+    <rect x="360" y="470" width="150" height="60" fill="#c8a372"/>
+    <g fill="#f39c12"><circle cx="385" cy="466" r="18"/><circle cx="420" cy="462" r="18"/><circle cx="455" cy="466" r="18"/><circle cx="488" cy="462" r="18"/><circle cx="402" cy="443" r="17"/><circle cx="440" cy="441" r="17"/><circle cx="474" cy="444" r="17"/></g>
+    <rect x="530" y="470" width="180" height="60" fill="#c8a372"/>
+    <g fill="#f1d23b"><path d="M545 470 q40 -45 80 -10 q-40 -15 -80 10z"/><path d="M590 465 q45 -45 90 -5 q-45 -15 -90 5z"/></g>
+    <g fill="#5aa34a"><ellipse cx="560" cy="458" rx="22" ry="14"/><ellipse cx="690" cy="458" rx="22" ry="14"/></g>
+    <!-- cartel de precios -->
+    <rect x="215" y="500" width="70" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+    <text x="250" y="527" font-family="Arial" font-size="18" text-anchor="middle" fill="#333">2 €/kg</text>
+    <rect x="395" y="500" width="70" height="40" fill="#fff" stroke="#333" stroke-width="2"/>
+    <text x="430" y="527" font-family="Arial" font-size="18" text-anchor="middle" fill="#333">1,5 €</text>
+    <!-- balanza -->
+    <rect x="610" y="500" width="70" height="20" fill="#9aa3ad"/><rect x="625" y="485" width="40" height="16" fill="#c9d0d6"/>
+  </g>
+  <!-- vendedor (detrás del mostrador) -->
+  <g>
+    <circle cx="455" cy="360" r="38" fill="#c68a5e"/>
+    <path d="M418 350 q37 -50 75 0 q-10 -30 -37 -32 q-28 2 -38 32z" fill="#3a2a20"/>
+    <circle cx="442" cy="360" r="4" fill="#222"/><circle cx="470" cy="360" r="4" fill="#222"/>
+    <path d="M442 378 q14 12 28 0" stroke="#7a3b2a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M395 520 q0 -100 60 -110 q60 10 60 110z" fill="#2e7d4f"/>
+    <rect x="425" y="420" width="60" height="100" fill="#f4efe6"/>
+    <path d="M405 470 q-40 10 -30 40" stroke="#c68a5e" stroke-width="18" fill="none" stroke-linecap="round"/>
+    <path d="M505 470 q45 0 60 25" stroke="#c68a5e" stroke-width="18" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- clienta mayor con bolsa (delante, a la derecha) -->
+  <g>
+    <circle cx="880" cy="400" r="40" fill="#f1c9a5"/>
+    <path d="M840 395 q40 -60 82 0 q-6 -40 -41 -42 q-35 2 -41 42z" fill="#d7d7d7"/>
+    <circle cx="866" cy="402" r="4" fill="#222"/><circle cx="894" cy="402" r="4" fill="#222"/>
+    <path d="M866 420 q14 10 28 0" stroke="#9b4b3a" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M830 700 l18 -250 q32 -20 64 0 l18 250z" fill="#6a5acd"/>
+    <path d="M835 520 q-45 30 -95 10" stroke="#f1c9a5" stroke-width="16" fill="none" stroke-linecap="round"/>
+    <rect x="845" y="700" width="18" height="60" fill="#444"/><rect x="895" y="700" width="18" height="60" fill="#444"/>
+    <!-- bolsa de tela -->
+    <path d="M930 560 q30 -40 55 0" stroke="#7b5a3a" stroke-width="6" fill="none"/>
+    <rect x="920" y="560" width="75" height="85" rx="8" fill="#e3c27a"/>
+    <g fill="#5aa34a"><rect x="935" y="540" width="8" height="30"/><rect x="950" y="535" width="8" height="35"/></g>
+    <!-- gafas -->
+    <g stroke="#333" stroke-width="3" fill="none"><circle cx="866" cy="402" r="11"/><circle cx="894" cy="402" r="11"/><line x1="877" y1="402" x2="883" y2="402"/></g>
+  </g>
+  <!-- niño con la mano de la señora -->
+  <g>
+    <circle cx="1010" cy="545" r="30" fill="#b9805a"/>
+    <path d="M982 538 q28 -42 58 0 q-6 -25 -29 -27 q-23 2 -29 27z" fill="#1f1b18"/>
+    <circle cx="1000" cy="548" r="3.5" fill="#222"/><circle cx="1020" cy="548" r="3.5" fill="#222"/>
+    <path d="M1000 562 q10 8 20 0" stroke="#7a3b2a" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <rect x="985" y="575" width="52" height="90" rx="10" fill="#f4a63a"/>
+    <rect x="990" y="665" width="16" height="70" fill="#2f5e8f"/><rect x="1016" y="665" width="16" height="70" fill="#2f5e8f"/>
+    <path d="M988 600 q-30 10 -45 -20" stroke="#b9805a" stroke-width="12" fill="none" stroke-linecap="round"/>
+    <!-- globo -->
+    <line x1="1050" y1="600" x2="1080" y2="430" stroke="#555" stroke-width="2"/>
+    <ellipse cx="1083" cy="405" rx="32" ry="40" fill="#3fa7d6"/>
+    <path d="M1036 600 q8 4 14 0" stroke="#b9805a" stroke-width="12" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- perro -->
+  <g>
+    <ellipse cx="110" cy="700" rx="65" ry="32" fill="#a0703f"/>
+    <circle cx="55" cy="665" r="28" fill="#a0703f"/>
+    <ellipse cx="40" cy="650" rx="10" ry="22" fill="#6b4a2f"/>
+    <circle cx="48" cy="662" r="4" fill="#222"/><circle cx="30" cy="672" r="5" fill="#222"/>
+    <rect x="70" y="720" width="14" height="45" fill="#a0703f"/><rect x="140" y="720" width="14" height="45" fill="#a0703f"/>
+    <path d="M172 690 q30 -30 20 -50" stroke="#a0703f" stroke-width="10" fill="none" stroke-linecap="round"/>
+  </g>
+  <!-- bicicleta apoyada -->
+  <g stroke="#2a4a6b" stroke-width="7" fill="none">
+    <circle cx="1080" cy="720" r="45"/><circle cx="1180" cy="720" r="45"/>
+    <path d="M1080 720 l40 -70 h50 l10 70 M1120 650 l20 70 M1170 650 l-10 -25 h20"/>
+  </g>
+</svg>

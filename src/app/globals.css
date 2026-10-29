@@ -1,0 +1,155 @@
+@import "tailwindcss";
+
+/*
+ * SIELE Trainer Pro — sistema visual propio.
+ * Tinta azul profunda como color de marca, con colores de sección inspirados en la experiencia de examen:
+ * dorado (comprensión), azul (expresión escrita) y naranja (expresión oral).
+ */
+:root {
+  --bg: #f4f2ee;
+  --surface: #ffffff;
+  --surface-2: #ece9e3;
+  --surface-3: #e0ddd6;
+  --ink: #1b1f27;
+  --ink-2: #4a5160;
+  --ink-3: #6c7383;
+  --line: #d8d4cc;
+  --line-strong: #b9b3a8;
+
+  --brand: #1d3557;
+  --brand-hover: #142740;
+  --brand-soft: #e3e9f2;
+  --accent: #b5392c;
+  --accent-soft: #fbe9e6;
+
+  --gold: #a67c1e;
+  --gold-soft: #f6eedb;
+  --blue: #1f63ad;
+  --blue-soft: #e2edf9;
+  --orange: #c4621a;
+  --orange-soft: #fbeadb;
+
+  --ok: #227a4a;
+  --ok-soft: #e1f2e8;
+  --warn: #9a6400;
+  --warn-soft: #fbf0d6;
+  --danger: #b4232a;
+  --danger-soft: #fbe4e4;
+
+  --exam-header: #22252b;
+  --focus: #2f6fd6;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-orange: var(--orange);
+  --color-orange-soft: var(--orange-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-exam-header: var(--exam-header);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-lexend), ui-sans-serif, system-ui, sans-serif;
+  --font-reading: var(--font-literata), Georgia, serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: #cfe0f7;
+}
+
+/* Texto de examen: tipografía de lectura cómoda y amplia */
+.reading-text {
+  font-family: var(--font-reading);
+  font-size: 1.06rem;
+  line-height: 1.75;
+}
+.reading-text p + p {
+  margin-top: 0.85em;
+}
+
+/* Barras de sección del examen */
+.stripe-comprehension {
+  background: var(--gold);
+}
+.stripe-writing {
+  background: var(--blue);
+}
+.stripe-speaking {
+  background: var(--orange);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    font-size: 12pt;
+  }
+  .print-card {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes pulse-rec {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.rec-dot {
+  animation: pulse-rec 1.2s ease-in-out infinite;
+}

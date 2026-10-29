@@ -1,0 +1,352 @@
+{
+  "note": "Guiones originales de SIELE Trainer Pro. Los audios se generan con voces sintéticas (scripts/generate_audio.py) y se identifican como tales en la plataforma.",
+  "files": [
+    {
+      "file": "ca-t1.mp3",
+      "title": "CA Tarea 1 — Conversación: el piso nuevo de Tomás",
+      "segments": [
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¡Tomás! ¿Qué tal en Valencia? ¿Ya tienes piso?"
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Hola, Lucía. Sí, desde el lunes vivo en un piso en el centro. Lo comparto con dos estudiantes: una chica italiana y un chico de Sevilla. Son muy simpáticos."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¡Qué bien! ¿Y tu habitación cómo es?"
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Es pequeña, pero tiene un balcón y mucha luz. Por las mañanas desayuno allí. Lo malo es que el piso está en la quinta planta y no hay ascensor."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¡Uf, cinco pisos a pie! ¿Y la universidad está lejos?"
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "No mucho. Voy en bicicleta y tardo unos quince minutos. El autobús es más lento porque hay mucho tráfico."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¿Y es caro?"
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Pago trescientos cincuenta euros al mes, con el agua y la luz incluidas. Y hay un supermercado justo debajo de casa, así que es muy práctico."
+        }
+      ],
+      "pause_ms": 450
+    },
+    {
+      "file": "ca-t2.mp3",
+      "title": "CA Tarea 2 — Cinco noticias y anuncios de radio",
+      "segments": [
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "Uno. Atención, vecinos de Villa Norte: a partir del próximo lunes, la línea doce de autobús cambia de recorrido por las obras de la avenida Juárez. Durante tres semanas, la parada del mercado se traslada a la calle Hidalgo, frente a la farmacia. Los horarios no cambian."
+        },
+        {
+          "voice": "es-MX-DaliaNeural",
+          "text": "Dos. ¿Quieres aprender a cocinar sin gastar mucho? La biblioteca municipal organiza talleres gratuitos de cocina saludable todos los miércoles de seis a ocho de la tarde. Las plazas son limitadas: inscríbete en el mostrador de la biblioteca o en su página web. Solo tienes que traer un delantal."
+        },
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "Tres. El tiempo para este fin de semana: el sábado tendremos sol y temperaturas agradables, ideales para salir al campo. Pero cuidado, porque el domingo por la tarde llegarán tormentas fuertes, sobre todo en la zona de la sierra. Les recomendamos volver a casa antes de las cuatro."
+        },
+        {
+          "voice": "es-MX-DaliaNeural",
+          "text": "Cuatro. Este año la feria del libro cambia de lugar: ya no se celebra en la plaza central, sino en el parque de la Ciudad Deportiva, que tiene más espacio y sombra. La feria abre el viernes y durará diez días. La entrada es libre y habrá actividades para niños todas las tardes."
+        },
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "Cinco. Nuestro programa de esta noche está dedicado a la música de los años ochenta. Si quieren pedir una canción, pueden enviarnos un mensaje al número que aparece en nuestra página. Los oyentes que llamen primero ganarán dos entradas para el concierto del sábado en el teatro Colón."
+        }
+      ],
+      "pause_ms": 1200
+    },
+    {
+      "file": "ca-t3.mp3",
+      "title": "CA Tarea 3 — Ocho personas hablan de su primer trabajo",
+      "segments": [
+        {
+          "voice": "es-AR-TomasNeural",
+          "text": "Persona uno. Mi primer trabajo fue en una heladería del barrio, a los diecisiete. Lo que más recuerdo es el frío de las manos: pasaba horas sirviendo helado. Pero aprendí a sonreír aunque estuviera cansado, y eso me sirvió para todo lo demás."
+        },
+        {
+          "voice": "es-CO-SalomeNeural",
+          "text": "Persona dos. Empecé dando clases particulares de matemáticas a niños de mi edificio. No ganaba mucho, pero descubrí que me encantaba explicar. Por eso, años después, decidí estudiar para ser profesora. Todo empezó en la mesa de la cocina de una vecina."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Persona tres. Trabajé un verano en un hotel de la costa. El sueldo era bueno, pero el horario era terrible: a veces terminaba a las dos de la mañana. Al final del verano tenía dinero ahorrado, pero estaba agotado y no había visto el mar ni una sola vez."
+        },
+        {
+          "voice": "es-CL-CatalinaNeural",
+          "text": "Persona cuatro. Mi primer empleo fue en una oficina de correos. Mis compañeros eran mucho mayores que yo y al principio me sentía un poco sola. Pero con el tiempo se convirtieron casi en mi familia; todavía hoy nos reunimos cada Navidad."
+        },
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "Persona cinco. Yo repartía pizzas en bicicleta. Era un trabajo duro, pero tenía algo bueno: conocí cada rincón de la ciudad. Cuando años después empecé a trabajar de taxista, ya sabía todas las calles de memoria."
+        },
+        {
+          "voice": "es-PE-CamilaNeural",
+          "text": "Persona seis. Mi primer trabajo lo conseguí gracias a mi tío, que tenía una tienda de electrodomésticos. Al principio no me gustaba nada, porque yo quería ser música. Sin embargo, allí aprendí a hablar con los clientes y a vender, y eso me ayuda ahora a organizar mis conciertos."
+        },
+        {
+          "voice": "es-ES-XimenaNeural",
+          "text": "Persona siete. Trabajé de camarera en un restaurante muy elegante. Un día se me cayó una bandeja entera delante de un cliente famoso. ¡Qué vergüenza! Pensé que me iban a despedir, pero el cliente se rio y me dejó una propina enorme."
+        },
+        {
+          "voice": "es-CO-GonzaloNeural",
+          "text": "Persona ocho. Mi primer trabajo fue en el campo, recogiendo café con mis abuelos. No me pagaban con dinero, sino con comida y con historias. Ahora tengo una empresa de exportación de café, así que podría decir que nunca he dejado ese primer trabajo."
+        }
+      ],
+      "pause_ms": 1500
+    },
+    {
+      "file": "ca-t4.mp3",
+      "title": "CA Tarea 4 — Entrevista: una arquitecta habla de las supermanzanas",
+      "segments": [
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Buenas tardes. Hoy tenemos en el estudio a Marta Ibáñez, arquitecta y urbanista, que lleva diez años trabajando en proyectos para devolver las calles a los peatones. Marta, bienvenida."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Gracias por la invitación. Es un tema que me apasiona, así que encantada."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Empecemos por lo básico. ¿Qué es exactamente una supermanzana?"
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Es una forma de reorganizar el tráfico. Se agrupan varias manzanas de casas y el tráfico de paso circula solo por las calles del perímetro. Dentro, los coches pueden entrar, pero muy despacio y solo si viven o trabajan allí. Así, las calles interiores se convierten en espacios para pasear, jugar o sentarse a charlar."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Supongo que al principio no todo el mundo estaría de acuerdo."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Desde luego que no. Los primeros meses fueron complicados. Muchos comerciantes temían perder clientes porque los coches ya no podían aparcar delante de sus tiendas. Lo curioso es que, al cabo de un año, la mayoría reconocía que vendía más: la gente camina más despacio, mira los escaparates y vuelve. Eso no lo esperábamos ni nosotros, sinceramente."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "¿Y los vecinos? ¿Qué es lo que más han notado?"
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Sobre todo, el silencio. Hicimos mediciones antes y después, y el ruido bajó de forma considerable. Pero lo que más me emociona no son los datos, sino ver a personas mayores que antes no salían de casa y ahora bajan a la calle porque hay bancos y sombra. Los niños, además, han vuelto a jugar en la calle, algo que parecía cosa del pasado."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Hay quien dice que estos proyectos solo trasladan el problema: los coches no desaparecen, se van a otras calles."
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Es una crítica razonable y la tomamos en serio. Es cierto que en las calles del perímetro el tráfico aumentó un poco al principio. Por eso, una supermanzana aislada no tiene mucho sentido: tiene que formar parte de un plan más amplio, con mejor transporte público y carriles para bicicletas. Si solo cambias una zona, efectivamente, mueves el problema de sitio."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "¿Qué consejo le daría a una ciudad que quiere empezar?"
+        },
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Que no intente hacerlo todo de golpe. Lo mejor es empezar con soluciones provisionales: pintura en el suelo, macetas, mobiliario que se puede mover. Si algo no funciona, se cambia sin gastar mucho. Y, sobre todo, que escuche a los vecinos desde el primer día. Los proyectos impuestos desde un despacho suelen fracasar, aunque técnicamente sean perfectos."
+        },
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "Marta Ibáñez, muchas gracias por acompañarnos."
+        }
+      ],
+      "pause_ms": 500
+    },
+    {
+      "file": "ca-t5.mp3",
+      "title": "CA Tarea 5 — Conferencia en seis fragmentos: la memoria y las lenguas",
+      "segments": [
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento uno. Muchas personas creen que, a partir de cierta edad, es imposible aprender bien una lengua. Mi experiencia en el laboratorio dice algo distinto: los adultos aprenden de otra manera, no necesariamente peor. Un niño absorbe sonidos con facilidad, pero un adulto tiene algo muy valioso: sabe organizar la información y relacionarla con lo que ya conoce."
+        },
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento dos. Durante años pensamos que repetir una palabra muchas veces seguidas era la mejor forma de recordarla. Hoy sabemos que es mucho más eficaz repasarla varias veces, pero dejando pasar tiempo entre un repaso y otro. Es lo que llamamos práctica espaciada. Al olvidar un poco y volver a recordar, el cerebro refuerza la conexión."
+        },
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento tres. Otro hallazgo interesante tiene que ver con el esfuerzo. Cuando intentamos recordar una palabra antes de mirar la respuesta, aunque nos equivoquemos, la memorizamos mejor que si simplemente la leemos. Por eso, hacer pequeñas pruebas es más útil que releer los apuntes una y otra vez, aunque releer nos dé una agradable sensación de seguridad."
+        },
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento cuatro. El sueño desempeña un papel que todavía subestimamos. Mientras dormimos, el cerebro selecciona y consolida lo que hemos aprendido durante el día. En uno de nuestros estudios, los participantes que durmieron bien después de estudiar recordaban un treinta por ciento más de vocabulario que los que pasaron la noche en vela."
+        },
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento cinco. Las emociones también influyen, y no siempre de manera positiva. Un poco de tensión puede ayudarnos a concentrarnos, pero la ansiedad intensa bloquea la memoria de trabajo. Esto explica por qué algunos estudiantes que dominan la lengua en clase se quedan en blanco en un examen. Practicar en condiciones parecidas a las de la prueba reduce ese efecto."
+        },
+        {
+          "voice": "es-AR-ElenaNeural",
+          "text": "Fragmento seis. Para terminar, quisiera insistir en la importancia del uso real. Las palabras que utilizamos para comunicar algo que nos importa se quedan con nosotros mucho más tiempo que las que estudiamos en una lista. Por eso recomiendo combinar el estudio sistemático con conversaciones, lecturas y escritos que tengan sentido para cada persona. La memoria, en definitiva, guarda lo que usamos."
+        }
+      ],
+      "pause_ms": 1500
+    },
+    {
+      "file": "ca-t6.mp3",
+      "title": "CA Tarea 6 — Conferencia: turismo y sostenibilidad",
+      "segments": [
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "Buenas tardes a todos. Me han pedido que hable del turismo sostenible, una expresión que se repite tanto que corre el riesgo de quedarse vacía. Así que voy a empezar con una confesión: durante mucho tiempo, mi trabajo consistió en atraer a la mayor cantidad posible de visitantes a mi región. Medíamos el éxito solo por el número de llegadas, y cada año queríamos batir el récord del anterior."
+        },
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "El problema apareció poco a poco. Los vecinos del centro histórico empezaron a marcharse porque los alquileres subían sin parar; muchos pisos se convertían en alojamientos turísticos. Las tiendas de toda la vida cerraban y en su lugar abrían comercios de recuerdos, todos iguales. Paradójicamente, el lugar perdía justo aquello que los turistas venían a buscar: su autenticidad."
+        },
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "No quiero dar la impresión de que el turismo sea el enemigo. En muchas zonas rurales ha sido la única actividad capaz de frenar la despoblación y de dar trabajo a los jóvenes. La cuestión no es si queremos turismo, sino qué tipo de turismo y bajo qué condiciones. Y esa decisión debería tomarse con la participación de quienes viven allí, no solo de las empresas."
+        },
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "En nuestro caso, cambiamos los indicadores. Dejamos de fijarnos únicamente en cuántas personas llegaban y empezamos a medir cuánto tiempo se quedaban, cuánto gastaban en negocios locales y qué efecto tenía su visita en la vida de los residentes. Descubrimos que un visitante que se queda una semana deja más riqueza, y menos huella, que diez que pasan un solo día."
+        },
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "También limitamos el número de autobuses que podían entrar en el casco antiguo y creamos un pequeño impuesto por noche, cuyo dinero se destina íntegramente a mantener el patrimonio y a mejorar los servicios para los vecinos. Hubo protestas al principio, claro, pero los datos de los últimos tres años nos dan la razón: hay menos visitantes, pero los ingresos totales han crecido."
+        },
+        {
+          "voice": "es-CL-LorenzoNeural",
+          "text": "Termino con una idea. El turismo sostenible no es un producto que se vende con una etiqueta verde; es un equilibrio que hay que revisar continuamente. Lo que funciona hoy quizá no funcione dentro de diez años. Por eso, más que recetas, necesitamos instituciones capaces de escuchar, medir y corregir. Muchas gracias."
+        }
+      ],
+      "pause_ms": 900
+    },
+    {
+      "file": "eio-t1-q1.mp3",
+      "title": "EIO T1 Pregunta 1",
+      "segments": [
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¿Cómo se llama y de dónde es?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t1-q2.mp3",
+      "title": "EIO T1 Pregunta 2",
+      "segments": [
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¿Con quién vive y cómo es su casa?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t1-q3.mp3",
+      "title": "EIO T1 Pregunta 3",
+      "segments": [
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "¿Qué hace normalmente los fines de semana? ¿Por qué?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t1-q4.mp3",
+      "title": "EIO T1 Pregunta 4",
+      "segments": [
+        {
+          "voice": "es-ES-ElviraNeural",
+          "text": "Hable de un viaje que recuerde con cariño. ¿Adónde fue y qué hizo allí?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-ciudades-q1.mp3",
+      "title": "EIO T4 Ciudades P1",
+      "segments": [
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "¿Cómo se desplaza usted normalmente por su ciudad? ¿Está satisfecho con esa forma de moverse?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-ciudades-q2.mp3",
+      "title": "EIO T4 Ciudades P2",
+      "segments": [
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "En su opinión, ¿qué ventajas e inconvenientes tendría cerrar el centro de su ciudad a los coches?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-ciudades-q3.mp3",
+      "title": "EIO T4 Ciudades P3",
+      "segments": [
+        {
+          "voice": "es-MX-JorgeNeural",
+          "text": "Si usted fuera alcalde o alcaldesa, ¿qué medida tomaría primero para mejorar la calidad de vida en su barrio?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-trabajo-q1.mp3",
+      "title": "EIO T4 Trabajo P1",
+      "segments": [
+        {
+          "voice": "es-MX-DaliaNeural",
+          "text": "¿Cuántas horas cree que es razonable trabajar a la semana? ¿Por qué?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-trabajo-q2.mp3",
+      "title": "EIO T4 Trabajo P2",
+      "segments": [
+        {
+          "voice": "es-MX-DaliaNeural",
+          "text": "¿Qué efectos podría tener la semana de cuatro días en las empresas de su país?"
+        }
+      ]
+    },
+    {
+      "file": "eio-t4-trabajo-q3.mp3",
+      "title": "EIO T4 Trabajo P3",
+      "segments": [
+        {
+          "voice": "es-MX-DaliaNeural",
+          "text": "Si tuviera un día libre más cada semana, ¿a qué lo dedicaría?"
+        }
+      ]
+    },
+    {
+      "file": "demo-ca.mp3",
+      "title": "Demo — Mensaje en el contestador",
+      "segments": [
+        {
+          "voice": "es-CO-SalomeNeural",
+          "text": "Hola, Daniel, soy Paula. Te llamo porque el viernes no puedo ir al cine: tengo que trabajar hasta tarde. ¿Te parece bien ir el sábado? La película empieza a las siete y media, así que podemos quedar a las siete en la puerta. Yo compro las entradas por internet. ¡Llámame!"
+        }
+      ],
+      "pause_ms": 300
+    },
+    {
+      "file": "demo-eio.mp3",
+      "title": "Demo — Pregunta oral",
+      "segments": [
+        {
+          "voice": "es-ES-AlvaroNeural",
+          "text": "¿Qué le gusta hacer en su tiempo libre? ¿Por qué?"
+        }
+      ]
+    }
+  ]
+}
