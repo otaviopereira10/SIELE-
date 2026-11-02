@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { Field, FormMessage, Input, Select, SubmitButton, Textarea } from "@/components/ui/form";
 import { createPlanForStudent } from "../../actions";
 
-export function TeacherPlanForm({ studentId }: { studentId: string }) {
+export function TeacherPlanForm({ studentId, defaultLevel, defaultDate }: { studentId: string; defaultLevel: string; defaultDate: string }) {
   const [state, action] = useActionState(createPlanForStudent, null);
   return (
     <form action={action} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -24,7 +24,7 @@ export function TeacherPlanForm({ studentId }: { studentId: string }) {
         </Select>
       </Field>
       <Field label="Nivel deseado" htmlFor="target_level">
-        <Select id="target_level" name="target_level" defaultValue="">
+        <Select id="target_level" name="target_level" defaultValue={defaultLevel}>
           <option value="">Sin indicar</option>
           {["A1", "A2", "B1", "B2", "C1"].map((l) => (
             <option key={l}>{l}</option>
@@ -32,7 +32,7 @@ export function TeacherPlanForm({ studentId }: { studentId: string }) {
         </Select>
       </Field>
       <Field label="Fecha objetivo" htmlFor="target_date">
-        <Input id="target_date" name="target_date" type="date" />
+        <Input id="target_date" name="target_date" type="date" defaultValue={defaultDate} />
       </Field>
       <Field label="Nota para el estudiante" htmlFor="note" className="sm:col-span-2 lg:col-span-4">
         <Textarea id="note" name="note" placeholder="Por ejemplo: céntrate en los pasados y graba cada día una respuesta de un minuto." />

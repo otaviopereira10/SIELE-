@@ -47,10 +47,10 @@ export function SkillProfile({ skills }: { skills: SkillProgress[] }) {
                   </div>
                   <p className="flex items-center gap-1 text-sm text-ink-2">
                     <TrendIcon className="size-4" aria-hidden />
-                    {s.delta != null ? `${s.delta > 0 ? "+" : ""}${formatNumber(s.delta)} p. p. respecto al intento anterior` : "Primer resultado"}
+                    {s.delta != null ? `${s.delta > 0 ? "+" : ""}${formatNumber(s.delta)} puntos porcentuales respecto al simulacro anterior` : "Primer resultado"}
                   </p>
                   <p className="text-sm">
-                    Nivel pedagógico estimado: <strong>{s.latest.pedagogicalLevel ? (LEVEL_LABEL[s.latest.pedagogicalLevel] ?? s.latest.pedagogicalLevel) : "—"}</strong>
+                    Nivel estimado: <strong>{s.latest.pedagogicalLevel ? (LEVEL_LABEL[s.latest.pedagogicalLevel] ?? s.latest.pedagogicalLevel) : "—"}</strong>
                   </p>
                   <p className="text-xs text-ink-3">{s.latest.pedagogicalLevelBasis}</p>
                 </>

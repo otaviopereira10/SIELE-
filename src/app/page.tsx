@@ -10,6 +10,13 @@ const SKILLS = [
   { icon: AudioLines, title: "Expresión e interacción orales", meta: "5 tareas grabadas", tone: "bg-orange-soft text-orange" },
 ];
 
+const STEPS = [
+  { title: "Elija su nivel", body: "De A1 a C1. Le explicamos en una frase qué significa cada uno." },
+  { title: "Vea desde dónde parte", body: "Una prueba corta, sin tiempo ni nota, que se adapta a usted." },
+  { title: "Siga su plan", body: "Cada día, una actividad clara: lecciones breves y ejercicios que se corrigen al momento." },
+  { title: "Compruebe si ha llegado", body: "Simulacros como el examen, corregidos por su profesora, y lo que le falta en cada prueba." },
+];
+
 const FEATURES = [
   {
     icon: BrainCircuit,
@@ -23,8 +30,8 @@ const FEATURES = [
   },
   {
     icon: ShieldCheck,
-    title: "Seguridad real",
-    body: "Permisos en la base de datos (RLS), claves de corrección que nunca llegan al navegador, temporizadores en el servidor y grabaciones privadas con URL firmadas.",
+    title: "Sus datos, protegidos",
+    body: "Solo acceden a sus respuestas y grabaciones usted, su profesora y la administración de la plataforma. Si su centro activa la asistencia de IA, el texto escrito se envía, sin su nombre, a un proveedor externo. Y si se corta la conexión, sus respuestas se conservan y se envían al volver, mientras siga abierto el tiempo de la prueba.",
   },
   {
     icon: LineChart,
@@ -39,7 +46,7 @@ export default function Home() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-6">
         <Logo />
         <nav className="flex items-center gap-2">
-          <ButtonLink href="/demo" variant="ghost">
+          <ButtonLink href="/demo" variant="ghost" className="hidden sm:inline-flex">
             Probar la demostración
           </ButtonLink>
           <ButtonLink href="/acceso">Acceder</ButtonLink>
@@ -50,14 +57,14 @@ export default function Home() {
         <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 pt-8 pb-16 sm:px-6 lg:grid-cols-[1.15fr_1fr] lg:pt-14">
           <div>
             <p className="mb-3 inline-flex rounded-full border border-line bg-surface px-3 py-1 text-sm text-ink-2">
-              Simulacros · evaluación docente · plan personalizado
+              Del nivel A1 al C1 · con la corrección de su profesora
             </p>
             <h1 className="text-4xl leading-[1.1] font-semibold tracking-tight text-ink sm:text-5xl">
-              Preparar el SIELE Global con datos, criterio y un plan que se entiende.
+              Prepare el SIELE paso a paso, hasta el nivel que necesita.
             </h1>
             <p className="mt-5 max-w-xl text-lg text-ink-2">
-              Plataforma independiente de simulacros, evaluación y preparación personalizada del español. Practique las cuatro pruebas con la estructura
-              pública del examen y reciba la corrección de su profesora con ejemplos de su propio texto.
+              Elija su objetivo y la plataforma le dice qué hacer cada día: lecciones breves, ejercicios que se corrigen al momento y simulacros como el examen. Nadie puede
+              garantizarle una nota, pero aquí siempre sabrá qué le falta y cuál es su siguiente paso.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <ButtonLink href="/acceso" size="lg">
@@ -113,6 +120,19 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+          <h2 className="text-2xl font-semibold tracking-tight">Cómo funciona</h2>
+          <ol className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((step, i) => (
+              <li key={step.title}>
+                <span className="flex size-9 items-center justify-center rounded-full bg-brand font-semibold text-white">{i + 1}</span>
+                <h3 className="mt-3 font-semibold">{step.title}</h3>
+                <p className="mt-1 text-ink-2">{step.body}</p>
+              </li>
+            ))}
+          </ol>
         </section>
 
         <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">

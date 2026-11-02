@@ -3,15 +3,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ModuleLesson } from "@/components/refuerzo/module-view";
 import { SelfRecorder } from "@/components/refuerzo/self-recorder";
+import { WritingPad } from "@/components/refuerzo/writing-pad";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
 import { getModule } from "@/content/refuerzo";
 import { requireRole } from "@/lib/auth/dal";
+import { requestTime } from "@/lib/clock";
+import { DRILL_SIZE } from "@/lib/exam/drill";
 import { recordPractice } from "../../../actions";
 import { DrillWithSave } from "./drill-with-save";
 
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }): Promise<Metadata> {
   const { key } = await params;
-  return { title: getModule(key)?.title ?? "Refuerzo" };
+  return { title: getModule(key)?.title ?? "Lecciones y ejercicios" };
 }
 
 export default async function ModulePage({ params }: { params: Promise<{ key: string }> }) {
@@ -24,7 +27,7 @@ export default async function ModulePage({ params }: { params: Promise<{ key: st
       <PageHeader
         eyebrow={
           <Link href="/estudiante/refuerzo" className="underline">
-            Biblioteca de refuerzo
+            Lecciones y ejercicios
           </Link>
         }
         title={m.title}
@@ -34,10 +37,14 @@ export default async function ModulePage({ params }: { params: Promise<{ key: st
         <ModuleLesson module={m} />
         <div className="space-y-6">
           {m.speakingPrompt ? <SelfRecorder prompt={m.speakingPrompt} /> : null}
+          {m.writingPrompt ? <WritingPad moduleKey={m.key} prompt={m.writingPrompt} /> : null}
           <Card>
-            <CardHeader title="Ejercicios" description="Al corregir, el resultado se guarda en su progreso." />
+            <CardHeader
+              title="Practique"
+              description={`${Math.min(DRILL_SIZE, m.exercises.length)} preguntas. Con un 80 % de aciertos, el tema queda dominado. Cada tanda es distinta.`}
+            />
             <CardBody>
-              <DrillWithSave moduleKey={m.key} exercises={m.exercises} save={recordPractice} />
+              <DrillWithSave moduleKey={m.key} exercises={m.exercises} seed={requestTime() % 1_000_000} save={recordPractice} />
             </CardBody>
           </Card>
         </div>

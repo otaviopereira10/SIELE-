@@ -10,7 +10,7 @@ import type { GradingData } from "@/lib/data/teacher";
 import { SKILL_META } from "@/lib/exam/skills";
 import { AiPanel } from "./ai-panel";
 import { AnnotationForm, type AnnotationDraft } from "./annotation-form";
-import { hasEmptyAudio, hasResponse, type EvaluationMeta, type EvaluationState, type Feedback, type GradingTask, type Rubric } from "./grading-model";
+import { hasEmptyAudio, hasResponse, type EvaluationMeta, type EvaluationState, type Feedback, type GradingTask, type Rubric, isOutdatedMarker } from "./grading-model";
 import { Observations } from "./observations";
 import { RubricPanel, type RubricCriterion, type RubricPanelHandle } from "./rubric-panel";
 import { SpeakingResponse } from "./speaking-response";
@@ -149,6 +149,10 @@ export function TaskGrader({
           emptyHint={isSpeaking ? "Mientras escucha, pulse «Comentar este momento» o la tecla M. El estudiante las verá en su informe." : "Seleccione un fragmento del texto para añadir la primera. El estudiante las verá en su informe."}
           onSeek={(f) => {
             if (f.recording_id && f.audio_ms != null) players.current[f.recording_id]?.seek(f.audio_ms);
+          }}
+          isOutdated={(f) => {
+            const recording = data.recordings.find((r) => r.id === f.recording_id);
+            return recording ? isOutdatedMarker(f, recording) : false;
           }}
         />
       </section>

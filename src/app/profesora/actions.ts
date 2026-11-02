@@ -1,5 +1,8 @@
 "use server";
 
+import { planContext } from "@/lib/diagnosis/plan-context";
+import { fitPlanToDate, weeksUntil } from "@/lib/plan/schedule";
+import { todayISO } from "@/lib/utils";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/auth/dal";
@@ -365,10 +368,7 @@ const teacherPlanSchema = z.object({
   minutes: z.enum(["15", "30", "60"]).transform(Number),
   weeks: z.coerce.number().int().min(1).max(12),
   target_level: z.enum(["A1", "A2", "B1", "B2", "C1", ""]).transform((v) => v || null),
-  target_date: z
-    .string()
-    .regex(/^(\d{4}-\d{2}-\d{2})?$/)
-    .transform((v) => v || null),
+  target_date: z.union([z.iso.date(), z.literal("")]).transform((v) => v || null),
   note: z.string().max(2000).default(""),
 });
 
@@ -377,11 +377,22 @@ export async function createPlanForStudent(_prev: ActionState, formData: FormDat
   const parsed = teacherPlanSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false, error: "Revise los datos del plan." };
   const v = parsed.data;
+  const today = todayISO(Date.now());
+  if (v.target_date && v.target_date <= today) return { ok: false, error: "La fecha del examen tiene que ser posterior a hoy." };
   const supabase = await createClient();
-  const { data: results } = await supabase.from("published_results").select("report").eq("student_id", v.student_id);
-  const diagnosis = buildDiagnosis((results ?? []).map((r) => r.report as PublishedReport));
-  const items = generatePlan(diagnosis, v.minutes as 15 | 30 | 60, v.weeks);
-  await supabase.from("study_plans").update({ status: "archived" }).eq("student_id", v.student_id).eq("status", "active");
+  const [{ data: results }, { data: practice }, { data: student }, { data: annulled }] = await Promise.all([
+    supabase.from("published_results").select("attempt_id, report").eq("student_id", v.student_id),
+    supabase.from("practice_progress").select("module_key, score, max_score, completed_at").eq("student_id", v.student_id).order("completed_at", { ascending: false }).limit(1000),
+    supabase.from("profiles").select("target_level").eq("id", v.student_id).maybeSingle(),
+    supabase.from("attempts").select("id").eq("student_id", v.student_id).eq("status", "annulled"),
+  ]);
+  const annulledIds = new Set((annulled ?? []).map((a) => a.id));
+  const targetLevel = v.target_level ?? student?.target_level;
+  const diagnosis = buildDiagnosis((results ?? []).filter((r) => !annulledIds.has(r.attempt_id)).map((r) => r.report as PublishedReport), { targetLevel });
+  const weeks = weeksUntil(today, v.target_date, v.weeks);
+  const generated = generatePlan(diagnosis, v.minutes as 15 | 30 | 60, weeks, { targetLevel, ...planContext(diagnosis, practice ?? []) });
+  const items = v.target_date ? fitPlanToDate(generated, today, v.target_date) : generated;
+  // el plan anterior solo se archiva cuando el nuevo ya está completo
   const { data: plan, error } = await supabase
     .from("study_plans")
     .insert({
@@ -389,7 +400,8 @@ export async function createPlanForStudent(_prev: ActionState, formData: FormDat
       created_by: profile.id,
       title: `Plan de mejora (${v.minutes} min/día)`,
       minutes_per_day: v.minutes,
-      weeks: v.weeks,
+      weeks,
+      starts_on: today,
       target_level: v.target_level,
       target_date: v.target_date,
       teacher_note: v.note,
@@ -399,7 +411,11 @@ export async function createPlanForStudent(_prev: ActionState, formData: FormDat
     .single();
   if (error || !plan) return { ok: false, error: "No se pudo crear el plan (¿el estudiante pertenece a su clase?)." };
   const { error: itemsError } = await supabase.from("study_plan_items").insert(items.map((i) => ({ ...i, plan_id: plan.id })));
-  if (itemsError) return { ok: false, error: "No se pudieron crear las actividades." };
+  if (itemsError) {
+    await supabase.from("study_plans").delete().eq("id", plan.id);
+    return { ok: false, error: "No se pudieron crear las actividades." };
+  }
+  await supabase.from("study_plans").update({ status: "archived" }).eq("student_id", v.student_id).eq("status", "active").neq("id", plan.id);
   revalidatePath(`/profesora/alumnos/${v.student_id}`);
   return { ok: true, message: "Plan de mejora creado y visible para el estudiante." };
 }

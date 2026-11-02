@@ -4,9 +4,10 @@ import { signOut } from "@/lib/auth/actions";
 
 const NAV: NavItem[] = [
   { href: "/estudiante", label: "Inicio", icon: "home", exact: true },
-  { href: "/estudiante/progreso", label: "Mi progreso", icon: "results" },
   { href: "/estudiante/plan", label: "Plan de estudio", icon: "plan" },
-  { href: "/estudiante/refuerzo", label: "Refuerzo", icon: "practice" },
+  { href: "/estudiante/refuerzo", label: "Lecciones y ejercicios", icon: "practice" },
+  { href: "/estudiante/progreso", label: "Mi progreso", icon: "results" },
+  { href: "/estudiante/guia", label: "Guía del examen", icon: "manual" },
   { href: "/estudiante/perfil", label: "Perfil", icon: "profile" },
 ];
 

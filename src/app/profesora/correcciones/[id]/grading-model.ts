@@ -18,6 +18,7 @@ export interface Feedback {
   char_end: number | null;
   recording_id: string | null;
   audio_ms: number | null;
+  created_at?: string;
   explanation: string;
   correction: string;
   improved_example: string;
@@ -133,4 +134,9 @@ export function previewScore(criteria: { key: string; weight: number }[], state:
   const points = complete ? criteria.reduce((s, c) => s + (table[c.key]?.[state.scores[c.key].band as number] ?? 0), 0) : null;
   const max = criteria.reduce((s, c) => s + (table[c.key]?.[5] ?? 0), 0);
   return { done, complete, percent, points, max };
+}
+
+/** Un comentario anterior a la grabación vigente se hizo sobre un audio que ya no existe: su minuto no significa nada. */
+export function isOutdatedMarker(feedback: Pick<Feedback, "created_at">, recording: { created_at?: string | null }): boolean {
+  return Boolean(feedback.created_at && recording.created_at && feedback.created_at < recording.created_at);
 }

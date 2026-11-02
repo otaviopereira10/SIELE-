@@ -1,10 +1,20 @@
 import { Badge, Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import type { RefuerzoModule } from "@/content/refuerzo";
+import { ListeningClip } from "./listening-clip";
 
 /** Explicación, ejemplos y pasos de un módulo de refuerzo. */
 export function ModuleLesson({ module: m }: { module: RefuerzoModule }) {
   return (
     <div className="space-y-6">
+      {m.passage ? (
+        <Card>
+          <CardHeader title={m.passage.title} description="Lea el texto y responda a las preguntas." />
+          <CardBody>
+            <p className="font-reading text-[1.05rem] leading-relaxed">{m.passage.body}</p>
+          </CardBody>
+        </Card>
+      ) : null}
+      {m.listening ? <ListeningClip script={m.listening.script} /> : null}
       <Card>
         <CardHeader title="Explicación" description={`${m.level} · ${m.minutes} minutos`} />
         <CardBody className="space-y-2">

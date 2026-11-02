@@ -290,7 +290,7 @@ function SectionIntro({
         <p className="mt-2 text-ink-2">{meta.description}</p>
         <ul className="mt-6 space-y-2 text-[0.98rem]">
           <li>
-            <strong>Tiempo:</strong> {formatDuration(section.time_limit_seconds)} ({Math.round(section.time_limit_seconds / 60)} minutos). El tiempo empieza cuando pulse «Comenzar» y lo controla el servidor.
+            <strong>Tiempo:</strong> {formatDuration(section.time_limit_seconds)} ({Math.round(section.time_limit_seconds / 60)} minutos). El tiempo empieza cuando pulse «Comenzar» y no se detiene aunque cierre la página.
           </li>
           <li>
             <strong>Tareas:</strong> {section.tasks.length}.{" "}

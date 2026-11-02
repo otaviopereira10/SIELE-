@@ -229,12 +229,14 @@ test.describe.serial("simulacro completo: estudiante y profesora", () => {
     const items = page.locator("main ol > li").filter({ has: page.locator("button[aria-pressed]") });
     for (let i = 0; i < (await items.count()); i++) await items.nth(i).locator("button[aria-pressed]").first().click();
     await page.getByRole("button", { name: "Corregir" }).click();
-    await expect(page.getByText("Resultado guardado en su progreso.")).toBeVisible();
+    await expect(page.getByText(/Resultado guardado/)).toBeVisible();
     await shot(page, "30-drill");
 
     await page.goto("/estudiante/plan");
-    await page.getByRole("button", { name: /Generar|Crear/ }).first().click();
-    await expect(page.getByText("Plan creado.").or(page.locator('input[type="checkbox"]').first())).toBeVisible();
+    const replace = page.getByText("Cree un plan nuevo");
+    if (await replace.isVisible()) await replace.click();
+    await page.getByRole("button", { name: /Crear mi plan|Sustituir mi plan/ }).click();
+    await expect(page.locator('input[type="checkbox"]').first()).toBeVisible();
     await shot(page, "31-plan");
     console.log("ERRORES ACTIVIDADES", JSON.stringify(errors, null, 1));
     expect(errors).toEqual([]);

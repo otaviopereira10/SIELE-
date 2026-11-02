@@ -9,7 +9,7 @@ import { Badge, RichText, inline } from "@/components/ui/primitives";
 import type { GradingData } from "@/lib/data/teacher";
 import { formatDuration } from "@/lib/exam/skills";
 import { saveTranscript } from "../../actions";
-import { hasResponse, speakingItems, type Feedback, type GradingRecording, type GradingTask, type SpeakingItem } from "./grading-model";
+import { hasResponse, isOutdatedMarker, speakingItems, type Feedback, type GradingRecording, type GradingTask, type SpeakingItem } from "./grading-model";
 
 /** Respuesta oral: cada pregunta junto a su grabación, en el orden en que se hizo. */
 export function SpeakingResponse({
@@ -44,7 +44,7 @@ export function SpeakingResponse({
       src={urls[rec.id]}
       sizeBytes={rec.size_bytes}
       durationMs={rec.duration_ms}
-      markers={feedback.filter((f) => f.recording_id === rec.id && f.audio_ms != null).map((f) => ({ id: f.id, ms: f.audio_ms as number, kind: f.kind, label: f.correction || f.explanation || f.quote || "Observación" }))}
+      markers={feedback.filter((f) => f.recording_id === rec.id && f.audio_ms != null && !isOutdatedMarker(f, rec)).map((f) => ({ id: f.id, ms: f.audio_ms as number, kind: f.kind, label: f.correction || f.explanation || f.quote || "Observación" }))}
       onMark={readOnly ? undefined : (ms) => onMark(rec.id, ms)}
       emptyAction={
         // si toda la tarea está vacía, el aviso de arriba ya ofrece la acción

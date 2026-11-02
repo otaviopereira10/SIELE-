@@ -1,4 +1,7 @@
 import type { Skill } from "@/lib/exam/content-schema";
+import { EXTRA_EXERCISES } from "./refuerzo-ejercicios";
+import { PRACTICE_MODULES, WRITING_PROMPTS } from "./refuerzo-practica";
+import { LEVEL_MODULES } from "./refuerzo-niveles";
 
 /**
  * Biblioteca de refuerzo: micro-lecciones originales con explicación breve, ejemplos y ejercicios
@@ -23,10 +26,16 @@ export interface RefuerzoModule {
   examples: { wrong?: string; right: string; note: string }[];
   steps?: string[];
   speakingPrompt?: string;
+  /** texto que se lee antes de responder */
+  passage?: { title: string; body: string };
+  /** audición que se escucha antes de responder */
+  listening?: { script: string };
+  /** tarea de escritura con las condiciones del examen */
+  writingPrompt?: { text: string; minWords: number; maxWords: number; minutes: number; checklist: string[] };
   exercises: DrillExercise[];
 }
 
-export const MODULES: RefuerzoModule[] = [
+const BASE_MODULES: RefuerzoModule[] = [
   {
     key: "pasados",
     title: "Pretérito indefinido e imperfecto",
@@ -41,7 +50,7 @@ export const MODULES: RefuerzoModule[] = [
       "Truco de narrador: el indefinido hace avanzar la historia; el imperfecto la detiene para describir.",
     ],
     examples: [
-      { wrong: "Ayer era un día muy bonito y fuimos a la playa; el agua fue fría.", right: "Ayer fue un día muy bonito: fuimos a la playa, aunque el agua estaba fría.", note: "La valoración global de un día terminado va en indefinido; el estado del agua, en imperfecto o con «estar»." },
+      { wrong: "Ayer fue un día muy bonito: fuimos a la playa, aunque el agua fue fría.", right: "Ayer fue un día muy bonito: fuimos a la playa, aunque el agua estaba fría.", note: "La valoración global de un día terminado va en indefinido; el estado del agua en ese momento, con «estar» en imperfecto." },
       { wrong: "Cuando fui pequeño, vivía en Lima.", right: "Cuando era pequeño, vivía en Lima.", note: "Una etapa de la vida se describe en imperfecto." },
       { right: "Estaba cocinando cuando sonó el teléfono.", note: "Acción en curso (imperfecto) interrumpida por un hecho puntual (indefinido)." },
     ],
@@ -49,7 +58,7 @@ export const MODULES: RefuerzoModule[] = [
       { prompt: "El verano pasado ___ a Cuba con mis primos.", options: ["viajé", "viajaba"], answer: 0, explanation: "Viaje concreto y terminado: indefinido." },
       { prompt: "De niña, ___ todos los domingos a casa de mi abuela.", options: ["fui", "iba"], answer: 1, explanation: "Hábito en el pasado: imperfecto." },
       { prompt: "La casa ___ grande y tenía un jardín precioso.", options: ["fue", "era"], answer: 1, explanation: "Descripción del escenario: imperfecto." },
-      { prompt: "Mientras yo leía, mi hermano ___ la cena.", options: ["preparó", "preparaba"], answer: 1, explanation: "Dos acciones simultáneas en desarrollo: imperfecto." },
+      { prompt: "Todas las noches, mientras yo leía, mi hermano ___ la cena.", options: ["preparó", "preparaba"], answer: 1, explanation: "Dos acciones habituales y simultáneas: imperfecto." },
       { prompt: "La fiesta ___ estupenda: bailamos hasta las tres.", options: ["fue", "era"], answer: 0, explanation: "Valoración de un acontecimiento terminado: indefinido." },
     ],
   },
@@ -117,7 +126,7 @@ export const MODULES: RefuerzoModule[] = [
       "Por: causa (por la lluvia), medio (por correo), lugar de paso (por el parque), tiempo aproximado (por la tarde), intercambio (por diez euros).",
     ],
     examples: [
-      { wrong: "Estudio español por trabajar en México.", right: "Estudio español para trabajar en México.", note: "Finalidad." },
+      { wrong: "Estudio español por trabajar en México el año que viene.", right: "Estudio español para trabajar en México el año que viene.", note: "Finalidad." },
       { wrong: "Cancelaron el partido para la lluvia.", right: "Cancelaron el partido por la lluvia.", note: "Causa." },
     ],
     exercises: [
@@ -145,7 +154,7 @@ export const MODULES: RefuerzoModule[] = [
       { wrong: "La gente están preocupados.", right: "La gente está preocupada.", note: "«Gente» concuerda en singular femenino." },
     ],
     exercises: [
-      { prompt: "Este ___ es muy interesante.", options: ["tema", "tema nueva"], answer: 0, explanation: "«Tema» es masculino: «este tema»." },
+      { prompt: "___ tema es muy interesante.", options: ["Este", "Esta"], answer: 0, explanation: "«Tema» es masculino: «este tema»." },
       { prompt: "La gente ___ más en transporte público.", options: ["viaja", "viajan"], answer: 0, explanation: "«Gente» va con verbo en singular." },
       { prompt: "Tengo unas vecinas muy ___.", options: ["simpáticos", "simpáticas"], answer: 1, explanation: "Femenino plural." },
       { prompt: "Fue ___ día inolvidable.", options: ["un", "una"], answer: 0, explanation: "«Día» es masculino." },
@@ -214,7 +223,7 @@ export const MODULES: RefuerzoModule[] = [
       "En la Tarea 4 oral suele haber una pregunta hipotética: conviene responder con esta estructura.",
     ],
     examples: [
-      { wrong: "Si sería alcalde, construiría más parques.", right: "Si fuera alcalde, construiría más parques.", note: "Tras «si» nunca va condicional." },
+      { wrong: "Si sería alcalde, construiría más parques.", right: "Si fuera alcalde, construiría más parques.", note: "Tras el «si» que introduce una condición no va condicional." },
       { right: "Si me hubieran avisado antes, habría ido.", note: "Pasado imaginario." },
     ],
     exercises: [
@@ -291,9 +300,9 @@ export const MODULES: RefuerzoModule[] = [
     ],
     exercises: [
       { prompt: "«Las redes sociales ___ la manera en que nos comunicamos.»", options: ["han hecho", "han transformado"], answer: 1, explanation: "Verbo preciso." },
-      { prompt: "«Es necesario ___ conciencia sobre el reciclaje.»", options: ["hacer", "tomar"], answer: 1, explanation: "Colocación: tomar conciencia." },
-      { prompt: "«Uno de los ___ más graves es el desempleo juvenil.»", options: ["problemas", "cosas"], answer: 0, explanation: "Sustantivo concreto." },
-      { prompt: "«La empresa ___ un nuevo plan de igualdad.»", options: ["puso en marcha", "hizo"], answer: 0, explanation: "Expresión precisa." },
+      { prompt: "«Es necesario ___ medidas contra el ruido.»", options: ["hacer", "adoptar"], answer: 1, explanation: "Colocación: adoptar medidas." },
+      { prompt: "Elija la opción más precisa: «Una de las ___ más graves es el desempleo juvenil.»", options: ["amenazas", "cosas"], answer: 0, explanation: "Sustantivo concreto; «cosas» es una palabra comodín." },
+      { prompt: "Elija la expresión más precisa: «La empresa ___ un nuevo plan de igualdad.»", options: ["puso en marcha", "hizo"], answer: 0, explanation: "«Poner en marcha» dice exactamente qué ocurrió; «hacer» es un verbo comodín." },
     ],
   },
   {
@@ -314,8 +323,8 @@ export const MODULES: RefuerzoModule[] = [
     ],
     exercises: [
       { prompt: "«Compré una bicicleta. ___ me permite ir al trabajo sin contaminar.»", options: ["La bicicleta", "Este medio de transporte"], answer: 1, explanation: "Hiperónimo para no repetir." },
-      { prompt: "«El ayuntamiento aprobó la ley. ___ entrará en vigor en enero.»", options: ["Dicha norma", "La ley que aprobó el ayuntamiento"], answer: 0, explanation: "Referencia anafórica." },
-      { prompt: "¿Qué sinónimo encaja? «Los ciudadanos… los ___»", options: ["habitantes", "edificios"], answer: 0, explanation: "Sinónimo contextual." },
+      { prompt: "«El ayuntamiento aprobó la ordenanza. ___ entrará en vigor en enero.»", options: ["Dicha norma", "La ordenanza que aprobó el ayuntamiento"], answer: 0, explanation: "Referencia anafórica: evita repetir." },
+      { prompt: "¿Qué sinónimo encaja? «Los ciudadanos… los ___»", options: ["habitantes", "dirigentes"], answer: 0, explanation: "Sinónimo contextual: los dirigentes son solo quienes gobiernan." },
     ],
   },
   {
@@ -361,7 +370,7 @@ export const MODULES: RefuerzoModule[] = [
       { wrong: "El teletrabajo ahorra tiempo. Pero aísla. Y es difícil separar vida y trabajo.", right: "Aunque el teletrabajo ahorra tiempo, puede aislar al trabajador; además, dificulta separar la vida personal de la profesional.", note: "Concesión y adición." },
     ],
     exercises: [
-      { prompt: "«Las ciudades crecen; ___, faltan zonas verdes.»", options: ["sin embargo", "por lo tanto"], answer: 1, explanation: "Consecuencia." },
+      { prompt: "«Las ciudades crecen sin planificación; ___, cada vez hay menos zonas verdes.»", options: ["sin embargo", "por lo tanto"], answer: 1, explanation: "Consecuencia." },
       { prompt: "«___ hacía frío, salimos a pasear.»", options: ["Aunque", "Ya que"], answer: 0, explanation: "Concesión." },
       { prompt: "«No solo reduce costes, ___ mejora la calidad.»", options: ["sino que también", "pero también"], answer: 0, explanation: "Estructura «no solo… sino que también»." },
       { prompt: "«___ todo lo expuesto, considero que la propuesta es positiva.»", options: ["Por", "Para"], answer: 0, explanation: "«Por todo lo expuesto» (conclusión)." },
@@ -405,7 +414,7 @@ export const MODULES: RefuerzoModule[] = [
       "Los puntos «menores» (saludo, despedida) también cuentan.",
     ],
     examples: [
-      { wrong: "Respuesta que describe la casa y el barrio, pero no dice qué le gusta de su nueva vida ni se despide.", right: "Respuesta que trata los cinco puntos: saludo, casa y zona, gustos, experiencias en el extranjero y despedida.", note: "Cada punto, al menos dos o tres frases." },
+      { wrong: "Respuesta que describe la casa y el barrio, pero no dice qué le gusta de su nueva vida ni se despide.", right: "Respuesta que trata los cinco puntos: saludo, casa y zona, gustos, experiencias en el extranjero y despedida.", note: "Cada punto de contenido, con dos o tres frases; el saludo y la despedida, con una fórmula breve." },
     ],
     steps: ["Subraye los verbos del enunciado (describir, explicar, proponer…).", "Escriba una palabra clave por punto en sus notas.", "Al revisar, marque cada punto cumplido."],
     exercises: [
@@ -514,8 +523,8 @@ export const MODULES: RefuerzoModule[] = [
     summary: "Sonidos que distinguen significados y entonación clara. No se trata de imitar un acento.",
     explanation: [
       "Se valora que se entienda, no un acento concreto: todas las variedades del español son válidas.",
-      "Diferencie r simple y rr (pero / perro, caro / carro) y las vocales átonas (papa / papá).",
-      "La sílaba tónica cambia el significado: «práctico / practico / practicó».",
+      "Diferencie r simple y rr (pero / perro, caro / carro) y no reduzca las vocales átonas finales («grande», no «grandi»; «mucho», no «muchu»).",
+      "La sílaba tónica cambia el significado: «papa / papá», «práctico / practico / practicó».",
     ],
     examples: [{ right: "«Ayer practiqué en el parque» — marque bien la sílaba tónica de cada palabra.", note: "Ritmo y acento." }],
     speakingPrompt: "Lea en voz alta y grábese: «El perro de Rosa corre por la carretera mientras yo practico el piano».",
@@ -541,7 +550,7 @@ export const MODULES: RefuerzoModule[] = [
     speakingPrompt: "Describa durante un minuto y medio una foto de su teléfono siguiendo las cinco pautas.",
     exercises: [
       { prompt: "Para expresar una acción en curso en la foto:", options: ["Los niños juegan siempre.", "Los niños están jugando."], answer: 1, explanation: "Estar + gerundio." },
-      { prompt: "Para hacer una hipótesis:", options: ["Parece que están celebrando algo.", "Celebran algo, seguro."], answer: 0, explanation: "Expresión de probabilidad." },
+      { prompt: "Para hacer una hipótesis:", options: ["Parece que están celebrando algo.", "Están celebrando algo."], answer: 0, explanation: "«Parece que» presenta la idea como una suposición." },
     ],
   },
   {
@@ -554,7 +563,7 @@ export const MODULES: RefuerzoModule[] = [
     summary: "Estrategias para las Tareas 1–3: leer primero las preguntas y localizar la información.",
     explanation: [
       "Lea las preguntas antes que el texto: le dicen qué buscar.",
-      "Las preguntas siguen el orden del texto.",
+      "En las Tareas 1 y 2, las preguntas suelen seguir el orden del texto; en la Tarea 3, los enunciados no siguen ningún orden: búsquelos en los tres textos.",
       "Los distractores suelen repetir palabras del texto con otro sentido: compare significados, no palabras.",
     ],
     examples: [{ right: "Texto: «La piscina abre de lunes a sábado; el domingo, solo por la mañana». Pregunta: ¿Se puede nadar el domingo por la tarde? → No.", note: "Atención a las restricciones." }],
@@ -578,7 +587,7 @@ export const MODULES: RefuerzoModule[] = [
     ],
     examples: [{ right: "«Tres meses después, el nuevo puente sigue sin abrirse. Eso sí, la inauguración fue espectacular.» → El autor critica la gestión del proyecto.", note: "Ironía." }],
     exercises: [
-      { prompt: "«Ni siquiera llamó para avisar.» El hablante está…", options: ["molesto", "agradecido"], answer: 0, explanation: "«Ni siquiera» expresa reproche." },
+      { prompt: "«Ni siquiera llamó para avisar.» El hablante está…", options: ["molesto", "agradecido"], answer: 0, explanation: "Aquí «ni siquiera» subraya que no hizo ni lo mínimo esperable: hay reproche." },
       { prompt: "«Apenas quedaban entradas.» Significa que…", options: ["quedaban muy pocas", "no quedaba ninguna"], answer: 0, explanation: "«Apenas» = casi no." },
       { prompt: "«El proyecto, al fin y al cabo, beneficia a todos.» El autor…", options: ["concluye que es positivo", "lo rechaza"], answer: 0, explanation: "Conclusión favorable." },
     ],
@@ -598,8 +607,8 @@ export const MODULES: RefuerzoModule[] = [
     ],
     examples: [{ right: "«___ las críticas, el proyecto siguió adelante.» → «A pesar de» (concesión + sustantivo).", note: "Categoría y relación lógica." }],
     exercises: [
-      { prompt: "«No vino ___ estaba enfermo.»", options: ["porque", "aunque"], answer: 0, explanation: "Causa." },
-      { prompt: "«___ que llueva, saldremos.»", options: ["Aunque", "Aun"], answer: 0, explanation: "«Aunque» + subjuntivo." },
+      { prompt: "«No faltó ___ estuviera enfermo, sino porque no quería venir.»", options: ["porque", "aunque"], answer: 0, explanation: "«No porque» + subjuntivo niega una causa; «sino porque» da la causa real." },
+      { prompt: "«___ llueva, saldremos.»", options: ["Aunque", "Aun"], answer: 0, explanation: "«Aunque» + subjuntivo: el hecho todavía no se sabe." },
       { prompt: "«La medida, ___ objetivo es reducir el ruido, entra en vigor hoy.»", options: ["cuyo", "que"], answer: 0, explanation: "Relativo posesivo." },
     ],
   },
@@ -661,6 +670,13 @@ export const MODULES: RefuerzoModule[] = [
     ],
   },
 ];
+
+/** Biblioteca completa, de A1 a C1, ordenada de lo más fácil a lo más difícil dentro de cada grupo. */
+export const MODULES: RefuerzoModule[] = [...BASE_MODULES, ...LEVEL_MODULES, ...PRACTICE_MODULES].map((m) => ({
+  ...m,
+  exercises: [...m.exercises, ...(EXTRA_EXERCISES[m.key] ?? [])],
+  writingPrompt: WRITING_PROMPTS[m.key] ?? m.writingPrompt,
+}));
 
 const byKey = new Map(MODULES.map((m) => [m.key, m]));
 export function getModule(key: string): RefuerzoModule | undefined {

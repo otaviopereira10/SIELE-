@@ -21,9 +21,19 @@ const dateTimeFmt = new Intl.DateTimeFormat("es-ES", {
 });
 const timeFmt = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit", timeZone });
 
+const dateOnlyFmt = new Intl.DateTimeFormat("es-ES", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+const isoDayFmt = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone });
+
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
+  // una fecha sin hora es un día del calendario: al pasarla a la zona local mostraría el día anterior
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) return dateOnlyFmt.format(new Date(`${value}T00:00:00Z`));
   return dateFmt.format(typeof value === "string" ? new Date(value) : value);
+}
+
+/** El día de hoy (AAAA-MM-DD) en la zona horaria de la aplicación. */
+export function todayISO(now: number | Date): string {
+  return isoDayFmt.format(now);
 }
 
 export function formatDateTime(value: string | Date | null | undefined): string {

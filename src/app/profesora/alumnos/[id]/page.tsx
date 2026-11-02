@@ -1,3 +1,6 @@
+import { requestTime } from "@/lib/clock";
+import { PLACEMENT_KEY } from "@/lib/diagnosis/placement";
+import { LEVELS, LEVEL_LABEL } from "@/lib/exam/skills";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -8,7 +11,7 @@ import { requireStaff } from "@/lib/auth/dal";
 import { buildDiagnosis } from "@/lib/diagnosis/engine";
 import type { PublishedReport } from "@/lib/results/report";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { formatDate, formatDateTime, todayISO } from "@/lib/utils";
 import { MODULES } from "@/content/refuerzo";
 import { TeacherPlanForm } from "./plan-form";
 
@@ -35,7 +38,8 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
       .maybeSingle(),
     supabase.from("practice_progress").select("module_key, score, max_score, completed_at").eq("student_id", id).order("completed_at", { ascending: false }).limit(20),
   ]);
-  const diagnosis = buildDiagnosis((results ?? []).map((r) => r.report as PublishedReport));
+  const annulled = new Set((attempts ?? []).filter((a) => a.status === "annulled").map((a) => a.id));
+  const diagnosis = buildDiagnosis((results ?? []).filter((r) => !annulled.has(r.attempt_id)).map((r) => r.report as PublishedReport), { targetLevel: student.target_level });
 
   return (
     <>
@@ -80,10 +84,10 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
             ) : (
               <ul className="space-y-1 text-sm">
                 {(practice ?? []).map((p, i) => (
-                  <li key={i} className="flex justify-between">
-                    <span>{MODULES.find((m) => m.key === p.module_key)?.title ?? p.module_key}</span>
+                  <li key={i} className="flex justify-between gap-3">
+                    <span>{p.module_key === PLACEMENT_KEY ? "Prueba de nivel" : (MODULES.find((m) => m.key === p.module_key)?.title ?? p.module_key)}</span>
                     <span className="text-ink-3">
-                      {p.score}/{p.max_score} · {formatDate(p.completed_at)}
+                      {p.module_key === PLACEMENT_KEY ? (LEVEL_LABEL[LEVELS[p.score]] ?? "—") : `${p.score}/${p.max_score}`} · {formatDate(p.completed_at)}
                     </span>
                   </li>
                 ))}
@@ -96,13 +100,13 @@ export default async function StudentPage({ params }: { params: Promise<{ id: st
       <Card className="mt-6">
         <CardHeader title="Plan de mejora" description="Genere un plan a partir del diagnóstico y añada una nota personal. Sustituye al plan activo." />
         <CardBody className="space-y-6">
-          <TeacherPlanForm studentId={student.id} />
+          <TeacherPlanForm studentId={student.id} defaultLevel={student.target_level ?? ""} defaultDate={student.target_date ?? ""} />
           {plan ? (
             <div>
               <p className="mb-3 font-medium">
                 Plan activo: {plan.title} · desde {formatDate(plan.starts_on)}
               </p>
-              <PlanView items={(plan.study_plan_items ?? []) as PlanItemView[]} moduleBase="/profesora/manual/refuerzo" editable={false} />
+              <PlanView items={(plan.study_plan_items ?? []) as PlanItemView[]} startsOn={plan.starts_on} weeks={plan.weeks} today={todayISO(requestTime())} moduleBase="/profesora/manual/refuerzo" editable={false} />
             </div>
           ) : null}
         </CardBody>

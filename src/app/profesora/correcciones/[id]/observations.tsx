@@ -18,12 +18,15 @@ export function Observations({
   readOnly,
   emptyHint,
   onSeek,
+  isOutdated,
 }: {
   attemptId: string;
   feedback: Feedback[];
   readOnly: boolean;
   emptyHint: string;
   onSeek?: (f: Feedback) => void;
+  /** comentarios hechos sobre un audio que el estudiante ya ha vuelto a grabar */
+  isOutdated?: (f: Feedback) => boolean;
 }) {
   const [pending, start] = useTransition();
   return (
@@ -46,7 +49,9 @@ export function Observations({
                   <span className="font-medium text-ink">{KIND[f.kind]}</span>
                   <span>· {categoryLabel(f.category)}</span>
                   {f.is_systematic ? <span className="font-medium text-danger">· Se repite</span> : null}
-                  {f.audio_ms != null ? (
+                  {f.audio_ms != null && isOutdated?.(f) ? (
+                    <span className="text-ink-3">· Sobre la grabación anterior</span>
+                  ) : f.audio_ms != null ? (
                     <button type="button" onClick={() => onSeek?.(f)} className="inline-flex items-center gap-1 rounded bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-ink tabular-nums hover:bg-surface-3">
                       <Clock className="size-3" aria-hidden /> {formatDuration(f.audio_ms / 1000)}
                     </button>

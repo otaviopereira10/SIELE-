@@ -8,7 +8,9 @@ import { SkillProfile } from "./skill-profile";
 /** Diagnóstico completo: perfil por destreza, fortalezas, prioridades, errores recurrentes y evidencias. */
 export function DiagnosisPanel({ diagnosis, moduleBase = "/estudiante/refuerzo" }: { diagnosis: Diagnosis; moduleBase?: string }) {
   if (diagnosis.generatedFrom === 0) {
-    return <EmptyState title="Todavía no hay resultados publicados">El diagnóstico aparecerá cuando se publique el primer simulacro.</EmptyState>;
+    return (
+      <EmptyState title="Todavía no hay resultados">Las prioridades y los errores que se repiten aparecerán en cuanto se corrija el primer simulacro.</EmptyState>
+    );
   }
   return (
     <div className="space-y-6">
@@ -31,7 +33,7 @@ export function DiagnosisPanel({ diagnosis, moduleBase = "/estudiante/refuerzo" 
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader title="Tres prioridades de mejora" />
+          <CardHeader title="En qué centrarse ahora" />
           <CardBody className="space-y-4">
             {diagnosis.priorities.length === 0 ? (
               <p className="text-sm text-ink-3">No se han detectado áreas débiles con los datos disponibles.</p>
@@ -49,7 +51,7 @@ export function DiagnosisPanel({ diagnosis, moduleBase = "/estudiante/refuerzo" 
                     </ul>
                   ) : null}
                   <p className="mt-2 text-sm">
-                    <span className="font-medium">Indicador de progreso:</span> {p.indicator}
+                    <span className="font-medium">Cómo comprobar la mejora:</span> {p.indicator}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-3">
                     {p.modules.map((m) =>

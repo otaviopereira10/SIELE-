@@ -1,4 +1,6 @@
 import "server-only";
+import { toReferenceTable, type ReferenceTable, type ScoringRow } from "@/lib/diagnosis/target";
+import { createAdminClient, isAdminClientConfigured } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import type { PublishedReport } from "@/lib/results/report";
 
@@ -42,13 +44,13 @@ export async function loadStudentOverview(studentId: string) {
     supabase.from("published_results").select("attempt_id, published_at, scope, report").eq("student_id", studentId).order("published_at", { ascending: true }),
     supabase
       .from("study_plans")
-      .select("id, title, minutes_per_day, starts_on, weeks, target_level, target_date, teacher_note, created_at, study_plan_items(id, week_no, day_no, position, activity, skill, title, description, module_key, minutes, completed_at)")
+      .select("id, title, minutes_per_day, starts_on, weeks, target_level, target_date, teacher_note, created_at, created_by, study_plan_items(id, week_no, day_no, position, activity, skill, title, description, module_key, minutes, completed_at)")
       .eq("student_id", studentId)
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase.from("practice_progress").select("module_key, score, max_score, completed_at").eq("student_id", studentId).order("completed_at", { ascending: false }).limit(200),
+    supabase.from("practice_progress").select("module_key, score, max_score, completed_at").eq("student_id", studentId).order("completed_at", { ascending: false }).limit(1000),
   ]);
 
   const assignmentRows: AssignmentRow[] = (assignments.data ?? []).map((a) => ({
@@ -64,14 +66,29 @@ export async function loadStudentOverview(studentId: string) {
     class_name: (a.classes as unknown as { name: string } | null)?.name ?? null,
   }));
 
+  // lo que corrigió un intento anulado no cuenta: la profesora ha decidido que no es válido
+  const attemptRows = (attempts.data ?? []) as AttemptRow[];
+  const annulled = new Set(attemptRows.filter((a) => a.status === "annulled").map((a) => a.id));
+  const resultRows = ((results.data ?? []) as { attempt_id: string; published_at: string; scope: string; report: PublishedReport }[]).filter((r) => !annulled.has(r.attempt_id));
+
   return {
     assignments: assignmentRows,
-    attempts: (attempts.data ?? []) as AttemptRow[],
-    reports: (results.data ?? []).map((r) => r.report as PublishedReport),
-    resultRows: (results.data ?? []) as { attempt_id: string; published_at: string; scope: string; report: PublishedReport }[],
+    attempts: attemptRows,
+    reports: resultRows.map((r) => r.report),
+    resultRows,
     plan: plan.data,
     practice: practice.data ?? [],
   };
+}
+
+/**
+ * Tabla pública de referencia (aciertos o puntos por nivel). Es un dato público que los estudiantes no
+ * pueden consultar directamente con su sesión: sin ella, la plataforma muestra solo los niveles.
+ */
+export async function loadReferenceTable(): Promise<ReferenceTable> {
+  if (!isAdminClientConfigured()) return {};
+  const { data } = await createAdminClient().from("scoring_tables").select("skill, kind, bands, max_raw, max_points").eq("is_active", true);
+  return toReferenceTable((data ?? []) as ScoringRow[]);
 }
 
 export const ATTEMPT_STATUS: Record<AttemptRow["status"], { label: string; tone: "brand" | "warn" | "ok" | "neutral" | "danger" | "blue" }> = {

@@ -1,7 +1,7 @@
 import type { Skill } from "@/lib/exam/content-schema";
-import { LEVELS, SKILL_META, SKILL_ORDER, levelRank } from "@/lib/exam/skills";
+import { LEVELS, SKILL_META, SKILL_ORDER, levelRank, levelWindow, moduleFitsWindow, moduleLevelRange } from "@/lib/exam/skills";
 import { objectivePercent, type LevelEstimate, type PublishedReport, type ReportSection } from "@/lib/results/report";
-import { getModule } from "@/content/refuerzo";
+import { MODULES, getModule, type RefuerzoModule } from "@/content/refuerzo";
 import { categoryLabel, getCategory } from "./taxonomy";
 
 /**
@@ -21,6 +21,8 @@ export interface SkillSnapshot {
   /** nivel pedagógico estimado: siempre etiquetado como estimación interna */
   pedagogicalLevel: string | null;
   pedagogicalLevelBasis: string;
+  /** resultado en la escala de la tabla pública, solo si la prueba es comparable con ella */
+  score: { value: number; max: number; unit: "aciertos" | "puntos" } | null;
 }
 
 export interface SkillProgress {
@@ -98,6 +100,7 @@ export function snapshotFor(report: PublishedReport, section: ReportSection): Sk
       pedagogicalLevelBasis: estimate
         ? "Tabla pública de aciertos (Guía de preparadores, 2016)"
         : "Estimación interna: nivel más alto con al menos un 60 % de aciertos en sus ítems",
+      score: estimate ? { value: o.correct, max: o.correct + o.wrong + o.blank, unit: "aciertos" } : null,
     };
   }
   if (section.productive && section.productive.tasks.some((t) => t.evaluation)) {
@@ -117,6 +120,10 @@ export function snapshotFor(report: PublishedReport, section: ReportSection): Sk
       pedagogicalLevelBasis: estimate
         ? "Puntos por banda y puntos de corte públicos (Guía de preparadores, 2016)"
         : "Estimación interna: mediana de las bandas de uso de la lengua",
+      score:
+        estimate && section.productive.total_points != null && section.productive.max_points != null
+          ? { value: section.productive.total_points, max: section.productive.max_points, unit: "puntos" }
+          : null,
     };
   }
   return null;
@@ -151,8 +158,9 @@ function chronological(reports: PublishedReport[]): PublishedReport[] {
   );
 }
 
-export function buildDiagnosis(input: PublishedReport[]): Diagnosis {
+export function buildDiagnosis(input: PublishedReport[], options: { targetLevel?: string | null } = {}): Diagnosis {
   const reports = chronological(input);
+  const goal = levelRank(options.targetLevel);
 
   // --- progreso por destreza -------------------------------------------------
   const skills: SkillProgress[] = SKILL_ORDER.map((skill) => {
@@ -237,9 +245,13 @@ export function buildDiagnosis(input: PublishedReport[]): Diagnosis {
     const report = reports.find((r) => r.attempt.id === snap.attemptId);
     const section = report?.sections.find((s) => s.skill === sp.skill);
     if (section?.objective) {
+      // quien necesita un B1 no tiene por qué superar las tareas de C1, ni reforzar una prueba que ya alcanza su objetivo
+      const skillReached = goal >= 0 && levelRank(snap.pedagogicalLevel) >= goal;
       for (const t of section.objective.by_task) {
         const total = t.correct + t.wrong + t.blank;
         if (total === 0) continue;
+        const taskLevels = (report?.items ?? []).filter((i) => i.skill === sp.skill && i.task_position === t.position && levelRank(i.level) >= 0).map((i) => levelRank(i.level));
+        if (goal >= 0 && (skillReached || (taskLevels.length > 0 && Math.min(...taskLevels) > goal))) continue;
         const pct = (t.correct / total) * 100;
         if (pct < 60) {
           const suggested = OBJECTIVE_MODULES[sp.skill](t.position);
@@ -316,7 +328,7 @@ export function buildDiagnosis(input: PublishedReport[]): Diagnosis {
   const top = priorities[0];
   const topModule = top?.modules[0] ? getModule(top.modules[0]) : undefined;
   const weeklyGoal = top
-    ? `Trabajar «${top.title}»${topModule ? ` con el módulo «${topModule.title}»` : ""} al menos tres días y aplicarlo en una producción cronometrada.`
+    ? `Trabajar «${top.title}»${topModule ? ` con el módulo «${topModule.title}»` : ""} dos días esta semana y aplicarlo en una producción cronometrada.`
     : "Hacer un simulacro cronometrado para obtener un primer diagnóstico.";
 
   const ranges = skills.map((s) => s.latest?.tableEstimate).filter((e): e is LevelEstimate => Boolean(e?.applicable));
@@ -372,65 +384,120 @@ const FALLBACK_BY_ACTIVITY: Record<Exclude<PlanActivity, "timed_mock">, string> 
   grammar: "pasados",
 };
 
+/** Módulos con los que se practica cada destreza contra el reloj: se usa el primero que encaje con el nivel. */
+const TIMED_MODULES: Record<Skill, string[]> = {
+  reading: ["lectura-avisos", "leer-b1-barrio", "leer-b2-teletrabajo", "leer-c1-memoria"],
+  listening: ["escuchar-a2-recado", "escuchar-b1-radio", "escuchar-c1-conferencia"],
+  writing: ["mensajes-cortos", "cumplir-enunciado", "organizacion"],
+  speaking: ["presentarse-oral", "situaciones-oral", "tema-oral", "argumentar-oral"],
+};
+
+/** Una actividad de prioridad se repite como mucho dos veces por semana, en días distintos: repetirla más no enseña más. */
+const MAX_PRIORITY_PER_WEEK = 2;
+
+export interface PlanOptions {
+  /** nivel que necesita el estudiante */
+  targetLevel?: string | null;
+  /** nivel de partida conocido (prueba de nivel o último simulacro) */
+  currentLevel?: string | null;
+  /** módulos ya dominados: pasan al final de la cola */
+  mastered?: ReadonlySet<string>;
+}
+
 /**
  * Genera un plan de N semanas (6 días de trabajo y uno de descanso) que alterna práctica receptiva,
- * escritura, oral, vocabulario, gramática y simulacros cronometrados, priorizando el diagnóstico.
+ * escritura, oral, vocabulario, gramática y práctica cronometrada. Prioriza el diagnóstico y, para el
+ * resto, recorre los módulos del nivel de partida al nivel objetivo, de lo más fácil a lo más difícil.
  */
-export function generatePlan(diagnosis: Diagnosis, minutesPerDay: 15 | 30 | 60, weeks: number): PlanItem[] {
+export function generatePlan(diagnosis: Diagnosis, minutesPerDay: 15 | 30 | 60, weeks: number, options: PlanOptions = {}): PlanItem[] {
   const blocks = minutesPerDay / 15;
-  const priorityModules = diagnosis.priorities.flatMap((p) => p.modules).filter((m, i, arr) => arr.indexOf(m) === i);
+  const window = levelWindow(options.targetLevel, options.currentLevel);
+  // una prioridad por encima del nivel objetivo no ayuda; las de niveles inferiores sí, porque refuerzan la base
+  const priorityModules = diagnosis.priorities
+    .flatMap((p) => p.modules)
+    .filter((m, i, arr) => arr.indexOf(m) === i)
+    .filter((m) => !window || moduleLevelRange(getModule(m)?.level ?? "")[0] <= window[1]);
   const weakestReceptive =
     diagnosis.skills
       .filter((s) => s.skill === "reading" || s.skill === "listening")
       .sort((a, b) => (a.latest?.percent ?? 101) - (b.latest?.percent ?? 101))[0]?.skill ?? "reading";
 
+  const mastered = options.mastered ?? new Set<string>();
+  const startKnown = levelRank(options.currentLevel) >= 1;
+  const queue = (activity: Exclude<PlanActivity, "timed_mock">): RefuerzoModule[] => {
+    const inWindow = MODULES.filter((m) => m.activity === activity && m.key !== "gestion-tiempo" && moduleFitsWindow(m.level, window));
+    // con el punto de partida conocido, lo que no pasa de ese nivel ya está superado
+    const ahead = window && startKnown ? inWindow.filter((m) => moduleLevelRange(m.level)[1] > window[0]) : inWindow;
+    const fitting = ahead.length ? ahead : inWindow;
+    // sin nivel objetivo no se puede saber por dónde empezar: se mantiene el orden general de la biblioteca
+    const rank = (m: RefuerzoModule) => (mastered.has(m.key) ? 100 : 0) + (activity === "receptive" && m.skill !== weakestReceptive ? 10 : 0) + (window ? moduleLevelRange(m.level)[0] : 0);
+    return [...fitting].sort((a, b) => rank(a) - rank(b));
+  };
+  const queues = new Map((["grammar", "receptive", "writing", "speaking", "vocabulary"] as const).map((a) => [a, queue(a)]));
+  const cursors = new Map<string, number>();
+  // huecos que tendrá cada actividad en todo el plan: así un plan corto recorre toda la cola, de lo fácil a lo difícil
+  const slotsFor = (activity: Exclude<PlanActivity, "timed_mock">) => Math.max(1, ((weeks * 6 * blocks) / 6) * (activity === "receptive" ? 2 : 1) * (priorityModules.length ? 0.5 : 1));
+  const nextFromQueue = (activity: Exclude<PlanActivity, "timed_mock">): string => {
+    const list = queues.get(activity) ?? [];
+    if (list.length === 0) return FALLBACK_BY_ACTIVITY[activity];
+    const at = cursors.get(activity) ?? 0;
+    cursors.set(activity, at + 1);
+    return list[Math.floor(at * Math.max(1, list.length / slotsFor(activity))) % list.length].key;
+  };
+
   // rotación base de actividades; las prioridades aparecen con más frecuencia
-  const rotation: PlanActivity[] = ["grammar", "receptive", "writing", "speaking", "vocabulary", "receptive"];
+  const rotation: Exclude<PlanActivity, "timed_mock">[] = ["grammar", "receptive", "writing", "speaking", "vocabulary", "receptive"];
   const items: PlanItem[] = [];
 
   for (let week = 1; week <= weeks; week++) {
     let slot = 0;
+    const usedThisWeek = new Map<string, number>();
+    const lastDayUsed = new Map<string, number>();
     for (let day = 1; day <= 6; day++) {
       const isMockDay = day === 6;
       for (let b = 0; b < blocks; b++) {
         const position = b + 1;
-        if (isMockDay && (b === 0 || minutesPerDay === 60)) {
-          if (b > 0) continue; // el simulacro ocupa el día entero en la intensidad de 60 min
+        const finalCheck = isMockDay && weeks > 1 && week === weeks;
+        if (isMockDay && (b === 0 || (finalCheck && minutesPerDay === 60))) {
+          if (b > 0) continue; // el simulacro de control ocupa el día entero en la intensidad de 60 min
           const mockSkill = SKILL_ORDER[(week - 1) % 4];
+          const candidates = TIMED_MODULES[mockSkill];
+          // el más exigente que encaje con el nivel: se practica contra el reloj lo que más se parece al examen
+          const fitting = candidates.filter((key) => moduleFitsWindow(getModule(key)?.level ?? "", window));
+          const timedModule = (window ? fitting.at(-1) : undefined) ?? candidates[Math.min(1, candidates.length - 1)];
           items.push({
             week_no: week,
             day_no: day,
             position,
             activity: "timed_mock",
-            skill: mockSkill,
-            title:
-              minutesPerDay === 60
-                ? `Simulacro cronometrado: ${SKILL_META[mockSkill].label}`
-                : `Tarea cronometrada de ${SKILL_META[mockSkill].short.toLowerCase()}`,
-            description:
-              minutesPerDay === 60
-                ? "Realice la prueba completa en condiciones de examen y anote qué le costó más."
-                : "Haga una sola tarea con el temporizador visible y revise el resultado.",
-            module_key: "gestion-tiempo",
-            minutes: minutesPerDay === 60 ? 60 : 15,
+            skill: finalCheck ? null : mockSkill,
+            title: finalCheck ? "Simulacro de control" : `Práctica cronometrada: ${SKILL_META[mockSkill].short.toLowerCase()}`,
+            description: finalCheck
+              ? "Si tiene un simulacro disponible, resérvele unas 3 h 15 min y compare el resultado con su objetivo. Si no, pídaselo a su profesora."
+              : "Ponga un temporizador de 15 minutos y haga la actividad sin pausas, como en el examen. Después, anote qué le costó más.",
+            module_key: finalCheck ? null : timedModule,
+            minutes: finalCheck && minutesPerDay === 60 ? 60 : 15,
           });
           continue;
         }
-        // cada dos bloques, uno es de prioridad
-        const usePriority = priorityModules.length > 0 && (slot % 2 === 0 || blocks === 1);
+        // cada dos bloques, uno es de prioridad (si esa prioridad no se ha repetido ya bastante esta semana)
+        const wantsPriority = priorityModules.length > 0 && (slot % 2 === 0 || blocks === 1);
+        const candidate = wantsPriority
+          ? Array.from({ length: priorityModules.length }, (_, i) => priorityModules[(Math.floor(slot / 2) + week - 1 + i) % priorityModules.length]).find(
+              (m) => (usedThisWeek.get(m) ?? 0) < MAX_PRIORITY_PER_WEEK && lastDayUsed.get(m) !== day,
+            )
+          : undefined;
         let moduleKey: string;
         let activity: PlanActivity;
-        if (usePriority) {
-          moduleKey = priorityModules[(Math.floor(slot / 2) + week - 1) % priorityModules.length];
+        if (candidate) {
+          moduleKey = candidate;
+          usedThisWeek.set(candidate, (usedThisWeek.get(candidate) ?? 0) + 1);
+          lastDayUsed.set(candidate, day);
           activity = ACTIVITY_OF_MODULE[getModule(moduleKey)?.activity ?? "grammar"] ?? "grammar";
         } else {
-          activity = rotation[(slot + week) % rotation.length];
-          moduleKey =
-            activity === "receptive"
-              ? weakestReceptive === "listening"
-                ? "escucha-estrategias"
-                : "lectura-global"
-              : FALLBACK_BY_ACTIVITY[activity as Exclude<PlanActivity, "timed_mock">];
+          const next = rotation[(slot + week) % rotation.length];
+          activity = next;
+          moduleKey = nextFromQueue(next);
         }
         const mod = getModule(moduleKey);
         items.push({
@@ -440,9 +507,7 @@ export function generatePlan(diagnosis: Diagnosis, minutesPerDay: 15 | 30 | 60, 
           activity,
           skill: mod?.skill && mod.skill !== "general" ? mod.skill : activity === "receptive" ? weakestReceptive : null,
           title: mod?.title ?? moduleKey,
-          description: usePriority
-            ? `Prioridad del diagnóstico. ${mod?.summary ?? ""}`.trim()
-            : (mod?.summary ?? "Práctica de mantenimiento."),
+          description: candidate ? `Prioridad de su diagnóstico. ${mod?.summary ?? ""}`.trim() : (mod?.summary ?? "Práctica de mantenimiento."),
           module_key: moduleKey,
           minutes: 15,
         });

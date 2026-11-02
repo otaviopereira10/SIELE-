@@ -10,11 +10,15 @@
 - **Motor de simulacros** con 7 tipos de tarea (selección única, asociación, huecos desplegables, fragmentos, selección múltiple, escritura, oral grabada), temporizadores controlados por el servidor, guardado automático con copia local ante cortes, reproducción de audio limitada por el servidor, grabación con MediaRecorder verificada en Storage (tamaño + SHA‑256), modo práctica (corrección inmediata) y modo formal.
 - **Simulacro 01 completo y original**: 38 ítems de lectura, 38 de audición (audios con voces sintéticas de 6 variedades del español, identificadas como tales), 2 tareas escritas y 5 orales con ilustraciones propias.
 - **Corrección docente**: rúbricas 0–5 versionadas (ponderaciones de la Guía de preparadores 2016), anotaciones sobre fragmentos del texto o momentos del audio, borradores, historial, nueva entrega, publicación, informe imprimible y exportación CSV.
-- **Diagnóstico y plan**: errores recurrentes con evidencias, tres prioridades con indicador de progreso, biblioteca de 28 micro‑lecciones con ejercicios y planes de 15/30/60 min al día.
+- **Diagnóstico y plan**: errores recurrentes con evidencias, tres prioridades con indicador de progreso, biblioteca de 56 micro‑lecciones con ejercicios y planes de 15/30/60 min al día.
 - **Administración**: usuarios y roles, clases, invitaciones (solo se guarda el hash), editor de simulacros con validación y versiones inmutables, vista previa, multimedia, rúbricas, «Fuentes, versión y metodología», auditoría automática, retención de datos y IA opcional (solo sugerencias que la profesora revisa).
 - **Manual de evaluación y preparación del SIELE** integrado (capítulos A–F).
 
 Stack: Next.js 16 (App Router) · React 19 · TypeScript estricto · Tailwind CSS 4 · Supabase (Auth, Postgres, Storage, RLS) · Zod · Vitest · PGlite (pruebas de RLS con Postgres real).
+
+### Camino del estudiante
+
+El inicio propone siempre un único paso (`src/lib/student/next-step.ts`): elegir el nivel objetivo, hacer la prueba de nivel, crear el plan, seguir las actividades de cada día y comprobar el nivel con un simulacro. Lo que falta en cada prueba se calcula con la tabla pública de referencia (`src/lib/diagnosis/target.ts`), y el plan recorre los módulos del nivel de partida al nivel objetivo (`generatePlan`). La biblioteca (`src/content/refuerzo*.ts`) cubre de A1 a C1, con especial atención a los errores de quien habla portugués.
 
 ## Puesta en marcha
 
@@ -56,6 +60,5 @@ Audios y figuras: `pip install edge-tts && python scripts/generate_audio.py` · 
 ## Limitaciones conocidas
 
 - Las conversiones a nivel usan tablas públicas de 2016 (marcadas «edición antigua»); comprensión solo muestra el intervalo de la franja. Varias reglas orales tienen fuentes contradictorias y se documentan en `/admin/fuentes`.
-- No se han ejecutado pruebas E2E contra un proyecto Supabase real (requiere credenciales); la demostración pública `/demo` sí se verificó en el navegador.
 - Las URL firmadas de audio duran 10 min: el límite de escuchas lo impone el servidor al emitir cada URL, no impide reutilizar una URL ya emitida.
 - Los tiempos de preparación oral se reinician si el estudiante recarga antes de grabar (el límite global de la prueba sigue en el servidor).
