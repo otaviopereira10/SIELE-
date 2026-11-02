@@ -5,6 +5,7 @@ import { Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, Badge } from "@/components/ui/primitives";
 import { categoryLabel } from "@/lib/diagnosis/taxonomy";
+import { formatDateTime } from "@/lib/utils";
 import type { AiSuggestion } from "@/lib/ai/feedback";
 import { requestAiSuggestion, setAiSuggestionStatus } from "../../actions";
 
@@ -64,7 +65,7 @@ export function AiPanel({
       {latest && latest.status !== "rejected" ? (
         <div className="space-y-3 text-sm">
           <p className="text-xs text-ink-3">
-            {latest.model} · {new Date(latest.created_at).toLocaleString("es-ES")} {latest.status === "accepted" ? "· revisada" : ""}
+            {latest.model} · {formatDateTime(latest.created_at)} {latest.status === "accepted" ? "· revisada" : ""}
           </p>
           {latest.suggestion.summary_for_teacher ? <p>{latest.suggestion.summary_for_teacher}</p> : null}
           {latest.suggestion.uncertainty ? (

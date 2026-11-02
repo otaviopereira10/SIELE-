@@ -16,6 +16,10 @@ export interface QueueRow {
   skills: string[];
   drafts: number;
   evaluated: number;
+  /** Tareas de expresión que hay que evaluar en este intento. */
+  productive_total: number;
+  /** Alguna grabación está vacía: el micrófono no envió sonido. */
+  empty_audio: boolean;
 }
 
 /** Bandeja de corrección: intentos visibles para la profesora (RLS) con su estado de evaluación. */
@@ -26,7 +30,7 @@ export async function loadQueue() {
     supabase
       .from("attempts")
       .select(
-        "id, status, mode, started_at, submitted_at, published_at, student_id, profiles!attempts_student_id_fkey(full_name), exam_assignments(title), attempt_sections(exam_sections(skill))",
+        "id, status, mode, started_at, submitted_at, published_at, student_id, profiles!attempts_student_id_fkey(full_name), exam_assignments(title), attempt_sections(exam_sections(skill, tasks(id))), oral_recordings(size_bytes, status)",
       )
       .neq("status", "annulled")
       .order("submitted_at", { ascending: false, nullsFirst: false })
@@ -36,6 +40,7 @@ export async function loadQueue() {
   ]);
   const rows: QueueRow[] = (attempts ?? []).map((a) => {
     const evs = (evaluations ?? []).filter((e) => e.attempt_id === a.id);
+    const sections = ((a.attempt_sections ?? []) as unknown as { exam_sections: { skill: string; tasks: { id: string }[] } | null }[]).map((x) => x.exam_sections);
     return {
       id: a.id,
       status: a.status,
@@ -47,9 +52,11 @@ export async function loadQueue() {
       student_name: (a.profiles as unknown as { full_name: string } | null)?.full_name ?? "—",
       assignment_title: (a.exam_assignments as unknown as { title: string } | null)?.title ?? "—",
       class_ids: (members ?? []).filter((m) => m.student_id === a.student_id).map((m) => m.class_id),
-      skills: ((a.attempt_sections ?? []) as unknown as { exam_sections: { skill: string } | null }[]).map((s) => s.exam_sections?.skill ?? "").filter(Boolean),
+      skills: sections.map((s) => s?.skill ?? "").filter(Boolean),
       drafts: evs.filter((e) => e.status === "draft").length,
       evaluated: evs.filter((e) => e.is_complete).length,
+      productive_total: sections.filter((s) => s?.skill === "writing" || s?.skill === "speaking").reduce((n, s) => n + (s?.tasks.length ?? 0), 0),
+      empty_audio: ((a.oral_recordings ?? []) as unknown as { size_bytes: number; status: string }[]).some((r) => r.status === "verified" && r.size_bytes < 512),
     };
   });
   return rows;
@@ -86,6 +93,8 @@ export interface GradingTask {
   content: Record<string, unknown>;
   rubric_version_id: string | null;
   skill: "writing" | "speaking";
+  section_id: string;
+  section_position: number;
   section_title: string;
   section_started_at: string | null;
   section_completed_at: string | null;
@@ -137,7 +146,7 @@ export async function loadGrading(attemptId: string) {
     supabase.from("resubmissions").select("id, task_id, reason, status, created_at, submitted_at").eq("attempt_id", attemptId).order("created_at"),
   ]);
 
-  const tasks: GradingTask[] = ((tasksRes.data ?? []) as unknown as (Omit<GradingTask, "skill" | "section_title" | "section_started_at" | "section_completed_at" | "transcript" | "teacher_notes"> & {
+  const tasks: GradingTask[] = ((tasksRes.data ?? []) as unknown as (Omit<GradingTask, "skill" | "section_position" | "section_title" | "section_started_at" | "section_completed_at" | "transcript" | "teacher_notes"> & {
     section_id: string;
     task_private: { transcript: string; teacher_notes: string } | null;
   })[]).map((t) => {
@@ -145,6 +154,7 @@ export async function loadGrading(attemptId: string) {
     return {
       ...t,
       skill: sec.section.skill as "writing" | "speaking",
+      section_position: sec.section.position,
       section_title: sec.section.title,
       section_started_at: sec.started_at,
       section_completed_at: sec.completed_at,
@@ -152,6 +162,7 @@ export async function loadGrading(attemptId: string) {
       teacher_notes: t.task_private?.teacher_notes ?? "",
     };
   });
+  tasks.sort((a, b) => a.section_position - b.section_position || a.position - b.position);
 
   const writingResponseIds = (responses.data ?? []).filter((r) => r.item_key === "text").map((r) => r.id);
   const { data: revisions } = writingResponseIds.length

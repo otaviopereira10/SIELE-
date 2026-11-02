@@ -55,7 +55,7 @@ export async function saveEvaluation(input: {
     p_next_steps: v.nextSteps,
   });
   if (error) return { ok: false, error: errorMessage(error) };
-  revalidatePath(`/profesora/correcciones/${v.attemptId}`);
+  // sin revalidar: se guarda cada pocos segundos y la pantalla de corrección ya tiene el estado al día
   return { ok: true, message: "Borrador guardado.", data };
 }
 
@@ -155,7 +155,8 @@ export async function requestResubmission(attemptId: string, taskId: string, rea
   const { error } = await supabase.rpc("request_resubmission", { p_attempt: attemptId, p_task: taskId, p_reason: reason.slice(0, 2000) });
   if (error) return { ok: false, error: errorMessage(error) };
   revalidatePath(`/profesora/correcciones/${attemptId}`);
-  return { ok: true, message: "Se ha solicitado una nueva entrega." };
+  revalidatePath("/profesora/correcciones");
+  return { ok: true, message: "Petición enviada. El estudiante la verá al abrir el simulacro." };
 }
 
 export async function setAttemptLock(attemptId: string, locked: boolean): Promise<ActionState> {

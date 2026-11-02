@@ -190,6 +190,14 @@ describe("expresión oral: grabaciones verificadas", () => {
     ).rejects.toThrow(/recording_size_mismatch/);
   });
 
+  it("rechaza una grabación sin audio aunque el archivo exista (solo cabeceras)", async () => {
+    const path = `${w.student}/${attempt}/${w.tasks.speaking}/p1-q1-1800000000001.webm`;
+    await db.as(w.student, `insert into storage.objects (bucket_id, name, owner, metadata) values ('recordings', $1, $2, $3)`, [path, w.student, JSON.stringify({ size: 5 })]);
+    await expect(
+      db.rpc(w.student, "register_recording", [attempt, w.tasks.speaking, "p1", "q1", path, "audio/webm", 5, 25000, sha]),
+    ).rejects.toThrow(/recording_empty/);
+  });
+
   it("rechaza rutas de otro intento o usuario", async () => {
     const bad = `${w.otherStudent}/${attempt}/${w.tasks.speaking}/p1-q1.webm`;
     await expect(
@@ -214,6 +222,22 @@ describe("expresión oral: grabaciones verificadas", () => {
     await expect(
       db.rpc(w.student, "register_recording", [attempt, w.tasks.speaking, "p1", "q1", path, "audio/webm", 2048, 25000, sha]),
     ).rejects.toThrow(/recording_already_submitted/);
+  });
+});
+
+describe("cierre de una prueba al agotarse el tiempo", () => {
+  it("dentro del margen, el cliente la cierra como tiempo agotado y se abre la siguiente", async () => {
+    const other = await db.rpc<string>(w.student, "start_attempt", [w.assignmentId]).catch(() => null);
+    if (!other) return;
+    const state = await db.rpc<Json>(w.student, "get_attempt_state", [other]);
+    const first = (state.sections as { section_id: string; status: string }[]).find((s) => s.status === "ready");
+    if (!first) return;
+    await db.rpc(w.student, "start_section", [other, first.section_id]);
+    await db.sql(`update public.attempt_sections set deadline_at = now() - interval '5 seconds' where attempt_id = $1 and section_id = $2`, [other, first.section_id]);
+    const res = await db.rpc<Json>(w.student, "complete_section", [other, first.section_id]);
+    expect(res.status).toBe("timed_out");
+    const [row] = await db.sql<{ status: string }>(`select status from public.attempt_sections where attempt_id = $1 and section_id = $2`, [other, first.section_id]);
+    expect(row.status).toBe("timed_out");
   });
 });
 

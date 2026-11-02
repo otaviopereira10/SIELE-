@@ -18,6 +18,12 @@ export interface OralApi {
   linkedChoices: Record<string, string>;
   allowRerecord: boolean;
   micReady: boolean;
+  /** Se agotó el tiempo de la prueba: la grabación en curso se detiene y se sube. */
+  expired?: boolean;
+  /** Hay una grabación en curso o sin subir: avisa para no cambiar de tarea y perderla. */
+  onBusyChange?: (busy: boolean) => void;
+  /** Avisos para el registro del intento (micrófono sin sonido). */
+  onProblem?: (type: "recording_empty" | "recording_silent", detail: Record<string, unknown>) => void;
 }
 
 export interface TaskRendererProps {

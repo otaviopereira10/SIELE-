@@ -4,12 +4,13 @@ import { useState } from "react";
 import { Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/primitives";
-import { useRecorder } from "@/components/exam/recorder";
+import { EmptyRecordingError, useRecorder } from "@/components/exam/recorder";
 
 /** Grabadora de autoevaluación: la grabación se queda en el dispositivo (no se sube). */
 export function SelfRecorder({ prompt }: { prompt: string }) {
   const rec = useRecorder();
   const [url, setUrl] = useState<string | null>(null);
+  const [empty, setEmpty] = useState(false);
   return (
     <div className="space-y-3 rounded-lg border border-orange/30 bg-orange-soft p-4">
       <p className="font-medium">{prompt}</p>
@@ -18,8 +19,16 @@ export function SelfRecorder({ prompt }: { prompt: string }) {
           <Button
             variant="danger"
             onClick={async () => {
-              const { blob } = await rec.stop();
-              setUrl(URL.createObjectURL(blob));
+              try {
+                const { blob } = await rec.stop();
+                setEmpty(false);
+                setUrl(URL.createObjectURL(blob));
+              } catch (err) {
+                if (err instanceof EmptyRecordingError) {
+                  setEmpty(true);
+                  setUrl(null);
+                }
+              }
             }}
           >
             <Square className="size-4" aria-hidden /> Detener
@@ -32,6 +41,7 @@ export function SelfRecorder({ prompt }: { prompt: string }) {
         {rec.state === "recording" ? <span className="rec-dot size-3 rounded-full bg-danger" aria-label="Grabando" /> : null}
       </div>
       {rec.error ? <Alert tone="danger">{rec.error}</Alert> : null}
+      {empty ? <Alert tone="danger">El micrófono no ha enviado sonido. Compruebe que esté conectado y sin silenciar, y vuelva a intentarlo.</Alert> : null}
       {url ? <audio src={url} controls className="w-full" /> : null}
       <p className="text-xs text-ink-3">Esta grabación no se envía al servidor: escúchese y compárela con los pasos del módulo.</p>
     </div>

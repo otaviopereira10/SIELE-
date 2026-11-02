@@ -41,6 +41,7 @@ export function ListeningPlayer({
   const max = media.maxPlays(mediaKey);
   const remaining = max > 0 ? Math.max(0, max - plays) : Infinity;
   const startedPaced = useRef(false);
+  const resumeRef = useRef<(() => void) | null>(null);
   const endRef = useRef(onSequenceEnd);
   useEffect(() => {
     endRef.current = onSequenceEnd;
@@ -76,22 +77,24 @@ export function ListeningPlayer({
       await new Promise<void>((resolve, reject) => {
         el.onended = () => resolve();
         el.onerror = () => reject(new Error("No se pudo reproducir el audio."));
-        el.play()
-          .then(() => setPhase("playing"))
-          .catch((err) => {
-            // el navegador puede bloquear la reproducción automática sin gesto del usuario
-            if (err?.name === "NotAllowedError") {
-              setPhase("blocked");
-              reject(err);
-            } else reject(err);
-          });
+        const begin = () =>
+          el
+            .play()
+            .then(() => setPhase("playing"))
+            .catch((err) => {
+              // el navegador puede bloquear la reproducción automática sin gesto del usuario:
+              // la secuencia espera aquí y continúa cuando pulse «Reproducir»
+              if (err?.name === "NotAllowedError") {
+                resumeRef.current = begin;
+                setPhase("blocked");
+              } else reject(err);
+            });
+        void begin();
       });
       return true;
     } catch (err) {
-      if ((err as Error)?.name !== "NotAllowedError") {
-        setError(errorMessage(err));
-        setPhase("error");
-      }
+      setError(errorMessage(err));
+      setPhase("error");
       return false;
     }
   }, [media, mediaKey]);
@@ -114,9 +117,11 @@ export function ListeningPlayer({
 
   useEffect(() => {
     if (paced && !startedPaced.current && phase === "idle") {
-      startedPaced.current = true;
-      // la secuencia actualiza el estado desde temporizadores y callbacks, no de forma síncrona
-      const id = window.setTimeout(() => void runPacedSequence(), 0);
+      // se marca dentro del temporizador: el doble montaje del modo estricto cancela el primero y no debe impedir el segundo
+      const id = window.setTimeout(() => {
+        startedPaced.current = true;
+        void runPacedSequence();
+      }, 0);
       return () => window.clearTimeout(id);
     }
   }, [paced, runPacedSequence, phase]);
@@ -154,17 +159,20 @@ export function ListeningPlayer({
           </p>
         </div>
         {synthetic ? <Badge tone="warn">Voz sintética</Badge> : null}
-        {!paced && phase !== "playing" && phase !== "loading" && remaining > 0 ? (
-          <Button variant="secondary" onClick={() => void playOnce().then(() => setPhase("idle"))}>
+        {!paced && phase !== "playing" && phase !== "loading" && phase !== "blocked" && remaining > 0 ? (
+          <Button
+            variant="secondary"
+            onClick={() =>
+              void playOnce().then((ok) => {
+                if (ok) setPhase("idle");
+              })
+            }
+          >
             <Play className="size-4" aria-hidden /> Escuchar
           </Button>
         ) : null}
         {phase === "blocked" ? (
-          <Button
-            onClick={() => {
-              void audioRef.current?.play().then(() => setPhase("playing"));
-            }}
-          >
+          <Button onClick={() => resumeRef.current?.()}>
             <Play className="size-4" aria-hidden /> Reproducir
           </Button>
         ) : null}

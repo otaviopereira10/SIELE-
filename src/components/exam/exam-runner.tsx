@@ -7,9 +7,9 @@ import { CheckCircle2, CloudOff, Loader2, RefreshCw, Save, TriangleAlert } from 
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Alert, Badge, Card, RichText } from "@/components/ui/primitives";
-import { requestAudioUrl, getTaskImageUrls } from "@/app/estudiante/intentos/[id]/actions";
+import { discardReplacedRecordings, requestAudioUrl, getTaskImageUrls } from "@/app/estudiante/intentos/[id]/actions";
 import { getBrowserClient } from "@/lib/supabase/browser";
-import { errorCode, errorMessage } from "@/lib/exam/errors";
+import { errorCode, errorMessage, isSessionError } from "@/lib/exam/errors";
 import { SKILL_META, formatDuration } from "@/lib/exam/skills";
 import type {
   AttemptSection,
@@ -24,7 +24,7 @@ import { useAutosave, type SaveStatus } from "./autosave";
 import { ExamFooter, ExamHeader, TaskTabs, TimerBox, useCountdown } from "./chrome";
 import { MicCheck } from "./mic-check";
 import { baseMime, extensionFor, sha256Hex } from "./recorder";
-import { TaskView, blankCount } from "./task-view";
+import { TaskErrorBoundary, TaskView, blankCount } from "./task-view";
 import type { MediaApi, OralApi } from "./types";
 
 type AnswerMap = Record<string, ResponsePayload>;
@@ -51,7 +51,13 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
 
   const saver = useCallback(
     async (taskId: string, itemKey: string, payload: ResponsePayload) => {
-      const { error } = await supabase.rpc("save_response", { p_attempt: attemptId, p_task: taskId, p_item_key: itemKey, p_payload: payload });
+      const params = { p_attempt: attemptId, p_task: taskId, p_item_key: itemKey, p_payload: payload };
+      let { error } = await supabase.rpc("save_response", params);
+      // sesión caducada (equipo en reposo): se renueva y se reintenta una vez
+      if (error && isSessionError(error)) {
+        await supabase.auth.refreshSession();
+        ({ error } = await supabase.rpc("save_response", params));
+      }
       if (error) throw error;
     },
     [supabase, attemptId],
@@ -65,7 +71,18 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
     [refresh],
   );
 
-  const autosave = useAutosave(`stp:pending:${attemptId}`, saver, onFatal);
+  const { actions: autosave, status: saveStatus, lastSavedAt, pendingCount } = useAutosave(`stp:pending:${attemptId}`, saver, onFatal);
+
+  // El cliente de Supabase solo envía la petición al esperar su resultado: sin el then, el evento nunca saldría.
+  const logEvent = useCallback(
+    (type: string, details: Record<string, unknown> = {}) => {
+      void supabase.rpc("log_client_event", { p_attempt: attemptId, p_type: type, p_details: details }).then(
+        () => undefined,
+        () => undefined,
+      );
+    },
+    [supabase, attemptId],
+  );
 
   // eventos relevantes para el control del intento
   const lastVisibilityLog = useRef(0);
@@ -73,11 +90,11 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
     const log = (type: string) => {
       if (Date.now() - lastVisibilityLog.current < 10_000) return;
       lastVisibilityLog.current = Date.now();
-      void supabase.rpc("log_client_event", { p_attempt: attemptId, p_type: type, p_details: {} });
+      logEvent(type);
     };
     const onVis = () => log(document.visibilityState === "hidden" ? "visibility_hidden" : "visibility_visible");
-    const onOffline = () => void supabase.rpc("log_client_event", { p_attempt: attemptId, p_type: "connection_lost", p_details: {} });
-    const onOnline = () => void supabase.rpc("log_client_event", { p_attempt: attemptId, p_type: "connection_restored", p_details: {} });
+    const onOffline = () => logEvent("connection_lost");
+    const onOnline = () => logEvent("connection_restored");
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);
@@ -86,7 +103,7 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
       window.removeEventListener("offline", onOffline);
       window.removeEventListener("online", onOnline);
     };
-  }, [supabase, attemptId]);
+  }, [logEvent]);
 
   const active = state.sections.find((s) => s.status === "active");
   const ready = state.sections.find((s) => s.status === "ready");
@@ -105,7 +122,19 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
 
   let body: React.ReactNode;
   if (state.attempt.status === "resubmission_requested") {
-    body = <ResubmissionView state={state} supabase={supabase} autosave={autosave} refresh={refresh} />;
+    body = (
+      <ResubmissionView
+        key={state.resubmissions[0]?.task_id ?? "none"}
+        state={state}
+        userId={userId}
+        supabase={supabase}
+        autosave={autosave}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
+        refresh={refresh}
+        logEvent={logEvent}
+      />
+    );
   } else if (!inProgress) {
     body = <SubmittedView state={state} />;
   } else if (active) {
@@ -118,12 +147,15 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
         userId={userId}
         supabase={supabase}
         autosave={autosave}
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
         refresh={refresh}
         setNotice={setNotice}
+        logEvent={logEvent}
       />
     );
   } else if (ready) {
-    body = <SectionIntro key={ready.section_id} state={state} section={ready} offset={offset} supabase={supabase} refresh={refresh} setNotice={setNotice} />;
+    body = <SectionIntro key={ready.section_id} state={state} section={ready} offset={offset} supabase={supabase} refresh={refresh} setNotice={setNotice} logEvent={logEvent} />;
   } else {
     body = <FinalReview state={state} supabase={supabase} autosave={autosave} refresh={refresh} onDone={() => router.refresh()} />;
   }
@@ -131,13 +163,13 @@ export function ExamRunner({ initialState, userId }: { initialState: AttemptStat
   return (
     <div className="flex min-h-dvh flex-col bg-surface">
       {body}
-      <ConnectionBanner status={autosave.status} pending={autosave.pendingCount} onRetry={() => void autosave.flush()} />
+      <ConnectionBanner status={saveStatus} pending={pendingCount} onRetry={() => void autosave.flush()} />
       <Dialog open={Boolean(notice)} onOpenChange={(o) => !o && setNotice(null)} title="Aviso" description={notice ?? ""} footer={<Button onClick={() => setNotice(null)}>Entendido</Button>} />
     </div>
   );
 }
 
-type Autosave = ReturnType<typeof useAutosave>;
+type Autosave = ReturnType<typeof useAutosave>["actions"];
 type Supa = ReturnType<typeof getBrowserClient>;
 
 function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedAt: Date | null }) {
@@ -151,7 +183,7 @@ function SaveIndicator({ status, lastSavedAt }: { status: SaveStatus; lastSavedA
       cls: "text-emerald-300",
     },
     offline: { icon: <CloudOff className="size-4" />, text: "Sin conexión: guardado en este dispositivo", cls: "text-amber-300" },
-    error: { icon: <TriangleAlert className="size-4" />, text: "Un cambio no se pudo guardar", cls: "text-red-300" },
+    error: { icon: <TriangleAlert className="size-4" />, text: "Hay cambios sin guardar: reintentando", cls: "text-red-300" },
   };
   const s = map[status];
   return (
@@ -175,6 +207,19 @@ function ConnectionBanner({ status, pending, onRetry }: { status: SaveStatus; pe
     () => navigator.onLine,
     () => true,
   );
+  if (online && status === "error" && pending > 0) {
+    return (
+      <div className="fixed inset-x-0 bottom-20 z-40 mx-auto w-[calc(100%-2rem)] max-w-xl rounded-xl border border-danger/30 bg-danger-soft px-4 py-3 shadow-lg" role="alert">
+        <p className="flex items-center gap-2 font-semibold text-danger">
+          <TriangleAlert className="size-5" aria-hidden /> {pending === 1 ? "Un cambio no se ha guardado" : `${pending} cambios no se han guardado`}
+        </p>
+        <p className="mt-1 text-sm text-ink-2">Se conservan en este dispositivo y se reintentan solos. Si el aviso continúa, recargue la página o vuelva a iniciar sesión: no perderá las respuestas.</p>
+        <Button size="sm" variant="secondary" className="mt-2" onClick={onRetry}>
+          <RefreshCw className="size-4" aria-hidden /> Reintentar ahora
+        </Button>
+      </div>
+    );
+  }
   if (online && status !== "offline") return null;
   return (
     <div className="fixed inset-x-0 bottom-20 z-40 mx-auto w-[calc(100%-2rem)] max-w-xl rounded-xl border border-warn/40 bg-warn-soft px-4 py-3 shadow-lg" role="alert">
@@ -202,6 +247,7 @@ function SectionIntro({
   supabase,
   refresh,
   setNotice,
+  logEvent,
 }: {
   state: AttemptState;
   section: AttemptSection;
@@ -209,6 +255,7 @@ function SectionIntro({
   supabase: Supa;
   refresh: () => Promise<AttemptState | null>;
   setNotice: (s: string) => void;
+  logEvent: (type: string, details?: Record<string, unknown>) => void;
 }) {
   const meta = SKILL_META[section.skill];
   const pauseLeft = useCountdown(section.available_at, offset);
@@ -216,6 +263,7 @@ function SectionIntro({
   const [micOk, setMicOk] = useState(section.skill !== "speaking");
   const [audioOk, setAudioOk] = useState(section.skill !== "listening");
   const [starting, setStarting] = useState(false);
+  const [noMicDialog, setNoMicDialog] = useState(false);
   const total = state.sections.length;
 
   const start = async () => {
@@ -279,11 +327,7 @@ function SectionIntro({
             <MicCheck
               onResult={(ok, detail) => {
                 setMicOk(ok);
-                void supabase.rpc("log_client_event", {
-                  p_attempt: state.attempt.id,
-                  p_type: ok ? "mic_check_ok" : "mic_check_failed",
-                  p_details: detail ? { detail } : {},
-                });
+                logEvent(ok ? "mic_check_ok" : "mic_check_failed", detail ? { detail } : {});
               }}
             />
           </div>
@@ -298,8 +342,37 @@ function SectionIntro({
             Comenzar la prueba
           </Button>
         </div>
-        {!micOk ? <p className="mt-2 text-right text-sm text-ink-3">Compruebe el micrófono para poder comenzar.</p> : null}
+        {!micOk ? (
+          <p className="mt-2 text-right text-sm text-ink-3">
+            Compruebe el micrófono para poder comenzar.{" "}
+            <button type="button" className="underline" onClick={() => setNoMicDialog(true)}>
+              No tengo micrófono
+            </button>
+          </p>
+        ) : null}
       </main>
+      <Dialog
+        open={noMicDialog}
+        onOpenChange={setNoMicDialog}
+        title="¿Continuar sin micrófono?"
+        description="Sin micrófono no podrá grabar sus respuestas y esta prueba quedará sin contestar. Si puede, salga y continúe desde otro dispositivo: el intento se reanuda donde lo dejó."
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setNoMicDialog(false)}>
+              Volver a comprobar
+            </Button>
+            <Button
+              variant="exam"
+              onClick={() => {
+                setNoMicDialog(false);
+                setMicOk(true);
+              }}
+            >
+              Continuar sin micrófono
+            </Button>
+          </>
+        }
+      />
     </>
   );
 }
@@ -314,8 +387,11 @@ function ActiveSection({
   userId,
   supabase,
   autosave,
+  saveStatus,
+  lastSavedAt,
   refresh,
   setNotice,
+  logEvent,
 }: {
   state: AttemptState;
   section: AttemptSection;
@@ -323,8 +399,11 @@ function ActiveSection({
   userId: string;
   supabase: Supa;
   autosave: Autosave;
+  saveStatus: SaveStatus;
+  lastSavedAt: Date | null;
   refresh: () => Promise<AttemptState | null>;
   setNotice: (s: string) => void;
+  logEvent: (type: string, details?: Record<string, unknown>) => void;
 }) {
   const attemptId = state.attempt.id;
   const [pos, setPos] = useState(section.current_task_position);
@@ -336,16 +415,31 @@ function ActiveSection({
   const [feedback, setFeedback] = useState<Record<string, PracticeCheckResult>>({});
   const [loadError, setLoadError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<null | { kind: "forward"; to: number; blanks: number } | { kind: "finish"; blanks: number }>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [expired, setExpired] = useState(false);
+  const [recBusy, setRecBusy] = useState(false);
+  const recBusyRef = useRef(false);
+  const uploads = useRef(0);
+  const loading = useRef(new Set<string>());
 
   const meta = section.tasks.find((t) => t.position === pos) ?? section.tasks[0];
   const taskId = meta.task_id;
   const payload = payloads[taskId];
   const isLast = pos === Math.max(...section.tasks.map((t) => t.position));
 
+  const sectionTasks = useRef(section.tasks);
+  useEffect(() => {
+    sectionTasks.current = section.tasks;
+  }, [section.tasks]);
+
   const loadTask = useCallback(
     async (id: string) => {
+      // una sola carga por tarea: una respuesta tardía no debe pisar lo que el estudiante ya ha contestado
+      if (loading.current.has(id)) return;
+      loading.current.add(id);
       const { data, error } = await supabase.rpc("get_attempt_task", { p_attempt: attemptId, p_task: id });
+      loading.current.delete(id);
       if (error) {
         const code = errorCode(error);
         setLoadError(errorMessage(error));
@@ -371,12 +465,12 @@ function ActiveSection({
         const urls = await getTaskImageUrls(attemptId, id);
         setImages((s) => ({ ...s, [id]: urls }));
       }
-      if (section.tasks.find((t) => t.task_id === id)?.checked) {
+      if (sectionTasks.current.find((t) => t.task_id === id)?.checked) {
         const { data: fb } = await supabase.rpc("check_practice_task", { p_attempt: attemptId, p_task: id });
         if (fb) setFeedback((s) => ({ ...s, [id]: fb as PracticeCheckResult }));
       }
     },
-    [supabase, attemptId, autosave, refresh, section.tasks],
+    [supabase, attemptId, autosave, refresh],
   );
 
   useEffect(() => {
@@ -386,12 +480,48 @@ function ActiveSection({
     return () => window.clearTimeout(t);
   }, [taskId, payloads, loadTask]);
 
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  /**
+   * Fin del tiempo: se detiene la grabación en curso, se sube lo pendiente y se cierra la prueba.
+   * Se repite hasta que el servidor confirme el cierre, para no dejar al estudiante parado con el reloj a cero.
+   */
   const onExpire = useCallback(async () => {
-    await autosave.flush();
-    setNotice("El tiempo de esta prueba ha terminado. Se ha guardado todo lo que respondió.");
-    await refresh();
-  }, [autosave, refresh, setNotice]);
+    setExpired(true);
+    setConfirm(null);
+    const limit = Date.now() + 45_000;
+    await sleep(300);
+    while ((uploads.current > 0 || recBusyRef.current) && Date.now() < limit && mounted.current) await sleep(300);
+    const saved = (await autosave.flush()) && uploads.current === 0 && !recBusyRef.current;
+    let closed: AttemptState | null = null;
+    while (mounted.current) {
+      await supabase.rpc("complete_section", { p_attempt: attemptId, p_section: section.section_id });
+      const next = await refresh();
+      const stillActive = !next || next.sections.some((s) => s.section_id === section.section_id && s.status === "active");
+      if (!stillActive) {
+        closed = next;
+        break;
+      }
+      await sleep(5000);
+    }
+    if (!saved) setNotice("El tiempo de esta prueba ha terminado, pero parte de lo último no se pudo guardar. Compruebe la conexión.");
+    // si el intento ya se ha entregado, la pantalla de confirmación ya lo explica
+    else if (closed?.attempt.status === "in_progress") setNotice("El tiempo de esta prueba ha terminado. Se ha guardado todo lo que respondió.");
+  }, [autosave, refresh, setNotice, supabase, attemptId, section.section_id]);
   const remaining = useCountdown(section.deadline_at, offset, onExpire);
+
+  const onBusyChange = useCallback((value: boolean) => {
+    recBusyRef.current = value;
+    setRecBusy(value);
+  }, []);
+  const onProblem = useCallback((type: string, detail: Record<string, unknown>) => logEvent(type, detail), [logEvent]);
+  const uploadRecording = useUploader({ supabase, userId, attemptId, autosave, uploadsRef: uploads, setRecordings, keepLocal: state.attempt.mode === "practice" });
 
   const onAnswer = useCallback(
     (itemKey: string, value: ResponsePayload, opts?: { debounceMs?: number }) => {
@@ -435,34 +565,12 @@ function ActiveSection({
       linkedChoices,
       allowRerecord: state.attempt.mode === "practice",
       micReady: true,
-      upload: async (partKey, segmentKey, blob, durationMs) => {
-        await autosave.flush();
-        const ext = extensionFor(blob.type);
-        const path = `${userId}/${attemptId}/${taskId}/${partKey}-${segmentKey}-${Date.now()}.${ext}`;
-        const sha = await sha256Hex(blob);
-        const { error: upError } = await supabase.storage
-          .from("recordings")
-          .upload(path, blob, { contentType: baseMime(blob.type), upsert: false, cacheControl: "0" });
-        if (upError) throw upError;
-        const { error } = await supabase.rpc("register_recording", {
-          p_attempt: attemptId,
-          p_task: taskId,
-          p_part: partKey,
-          p_segment: segmentKey,
-          p_path: path,
-          p_mime: baseMime(blob.type),
-          p_size: blob.size,
-          p_duration_ms: durationMs,
-          p_sha256: sha,
-        });
-        if (error) throw error;
-        setRecordings((s) => ({
-          ...s,
-          [taskId]: { ...(s[taskId] ?? {}), [`${partKey}/${segmentKey}`]: { part_key: partKey, segment_key: segmentKey, status: "verified", duration_ms: durationMs } },
-        }));
-      },
+      expired,
+      onBusyChange,
+      onProblem,
+      upload: (partKey, segmentKey, blob, durationMs) => uploadRecording(taskId, partKey, segmentKey, blob, durationMs),
     }),
-    [recordings, taskId, linkedChoices, state.attempt.mode, autosave, userId, attemptId, supabase],
+    [recordings, taskId, linkedChoices, state.attempt.mode, expired, onBusyChange, onProblem, uploadRecording],
   );
 
   const currentBlanks = payload
@@ -470,7 +578,7 @@ function ActiveSection({
     : 0;
 
   const goTo = async (to: number, skipConfirm = false) => {
-    if (to === pos) return;
+    if (to === pos || recBusy || expired) return;
     if (!section.allow_back && to > pos && !skipConfirm) {
       setConfirm({ kind: "forward", to, blanks: currentBlanks });
       return;
@@ -489,8 +597,11 @@ function ActiveSection({
   };
 
   const openFinish = async () => {
+    setConfirmError(null);
+    setBusy(true);
     await autosave.flush();
     const next = await refresh();
+    setBusy(false);
     const sec = next?.sections.find((s) => s.section_id === section.section_id) ?? section;
     const blanks = sec.tasks.reduce((sum, t) => {
       if (t.interaction_type === "writing") return sum + (t.answered > 0 ? 0 : 1);
@@ -502,24 +613,34 @@ function ActiveSection({
 
   const finishSection = async () => {
     setBusy(true);
-    await autosave.flush();
+    setConfirmError(null);
+    // nunca se cierra una prueba con respuestas sin guardar
+    if (!(await autosave.flush())) {
+      setBusy(false);
+      setConfirmError("Aún hay respuestas sin guardar en el servidor. Compruebe la conexión y vuelva a intentarlo: no se perderá nada.");
+      return;
+    }
     const { error } = await supabase.rpc("complete_section", { p_attempt: attemptId, p_section: section.section_id });
     setBusy(false);
+    if (error) {
+      setConfirmError(errorMessage(error));
+      if (errorCode(error)) void refresh();
+      return;
+    }
     setConfirm(null);
-    if (error) setNotice(errorMessage(error));
     await refresh();
     window.scrollTo({ top: 0 });
   };
 
   const checkTask = async () => {
-    await autosave.flush();
+    if (!(await autosave.flush())) return setNotice("Aún hay respuestas sin guardar. Compruebe la conexión y vuelva a intentarlo.");
     const { data, error } = await supabase.rpc("check_practice_task", { p_attempt: attemptId, p_task: taskId });
     if (error) return setNotice(errorMessage(error));
     setFeedback((s) => ({ ...s, [taskId]: data as PracticeCheckResult }));
   };
 
   const objective = payload && !["writing", "speaking"].includes(payload.task.interaction_type);
-  const canCheck = state.attempt.mode === "practice" && state.attempt.immediate_feedback && objective && !feedback[taskId];
+  const canCheck = state.attempt.mode === "practice" && state.attempt.immediate_feedback && objective && !feedback[taskId] && !expired;
   const tabs = section.tasks.map((t) => ({
     position: t.position,
     title: t.title,
@@ -534,7 +655,7 @@ function ActiveSection({
         title={SKILL_META[section.skill].label}
         subtitle={state.attempt.title}
         skill={section.skill}
-        right={<SaveIndicator status={autosave.status} lastSavedAt={autosave.lastSavedAt} />}
+        right={<SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />}
       />
       <main id="contenido" className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-10 sm:px-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -545,6 +666,13 @@ function ActiveSection({
           <p className="mb-4">
             <Badge tone="brand">Modo práctica</Badge>
           </p>
+        ) : null}
+        {expired ? (
+          <Alert tone="warn" className="mb-4" title="Se ha agotado el tiempo de esta prueba">
+            <span className="flex items-center gap-2">
+              <Loader2 className="size-4 animate-spin" aria-hidden /> Guardando lo último y cerrando la prueba…
+            </span>
+          </Alert>
         ) : null}
         {loadError ? (
           <Alert tone="danger" title="No se pudo cargar la tarea">
@@ -558,23 +686,24 @@ function ActiveSection({
             <Loader2 className="size-4 animate-spin" aria-hidden /> Cargando la tarea…
           </p>
         ) : (
-          <TaskView
-            key={taskId}
-            task={payload.task}
-            questions={payload.questions}
-            bank={payload.bank}
-            answers={answers[taskId] ?? {}}
-            onAnswer={onAnswer}
-            readOnly={Boolean(feedback[taskId])}
-            feedback={feedback[taskId]}
-            media={media}
-            skill={section.skill}
-            mode={state.attempt.mode}
-            oral={oral}
-            onTimedSequenceEnd={() => {
-              if (!isLast) void goTo(pos + 1, true);
-            }}
-          />
+          <TaskErrorBoundary key={taskId}>
+            <TaskView
+              task={payload.task}
+              questions={payload.questions}
+              bank={payload.bank}
+              answers={answers[taskId] ?? {}}
+              onAnswer={onAnswer}
+              readOnly={Boolean(feedback[taskId]) || (expired && section.skill !== "speaking")}
+              feedback={feedback[taskId]}
+              media={media}
+              skill={section.skill}
+              mode={state.attempt.mode}
+              oral={oral}
+              onTimedSequenceEnd={() => {
+                if (!isLast) void goTo(pos + 1, true);
+              }}
+            />
+          </TaskErrorBoundary>
         )}
         {canCheck ? (
           <div className="mt-8 rounded-xl border border-brand/20 bg-brand-soft px-4 py-3">
@@ -585,18 +714,20 @@ function ActiveSection({
           </div>
         ) : null}
       </main>
-      <ExamFooter progressLabel={`${pos} / ${section.tasks.length}`} progress={answeredSoFar / section.tasks.length}>
+      <ExamFooter progressLabel={recBusy ? "Termine la grabación para continuar" : `${pos} / ${section.tasks.length}`} progress={answeredSoFar / section.tasks.length}>
         {section.allow_back && pos > 1 ? (
-          <Button variant="secondary" size="lg" disabled={busy} onClick={() => void goTo(pos - 1)}>
+          <Button variant="secondary" size="lg" disabled={busy || recBusy || expired} onClick={() => void goTo(pos - 1)}>
             Anterior
           </Button>
         ) : null}
         {isLast ? (
-          <Button variant="exam" size="lg" disabled={busy} onClick={() => void openFinish()}>
+          <Button variant="exam" size="lg" disabled={busy || recBusy || expired} onClick={() => void openFinish()}>
+            {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
             Terminar la prueba
           </Button>
         ) : (
-          <Button variant="exam" size="lg" disabled={busy} onClick={() => void goTo(pos + 1)}>
+          <Button variant="exam" size="lg" disabled={busy || recBusy || expired} onClick={() => void goTo(pos + 1)}>
+            {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
             Siguiente
           </Button>
         )}
@@ -644,11 +775,14 @@ function ActiveSection({
               Volver
             </Button>
             <Button variant="exam" disabled={busy} onClick={() => void finishSection()}>
+              {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               Terminar la prueba
             </Button>
           </>
         }
-      />
+      >
+        {confirmError ? <Alert tone="danger">{confirmError}</Alert> : null}
+      </Dialog>
     </>
   );
 }
@@ -676,10 +810,19 @@ function FinalReview({
   const submit = async (confirmBlanks: boolean) => {
     setBusy(true);
     setError(null);
-    await autosave.flush();
+    if (!(await autosave.flush())) {
+      setBusy(false);
+      setConfirm(null);
+      setError("Aún hay respuestas sin guardar en el servidor. Compruebe la conexión y vuelva a pulsar «Enviar»: no se perderá nada.");
+      return;
+    }
     const { data, error: rpcError } = await supabase.rpc("submit_attempt", { p_attempt: state.attempt.id, p_confirm_blanks: confirmBlanks });
     setBusy(false);
-    if (rpcError) return setError(errorMessage(rpcError));
+    if (rpcError) {
+      setConfirm(null);
+      setError(errorMessage(rpcError));
+      return;
+    }
     const res = data as { status: string; blank_items: number; by_task?: { section_title: string; task_title: string; blank: number }[] };
     if (res.status === "needs_confirmation") {
       setConfirm({ blank: res.blank_items, byTask: res.by_task ?? [] });
@@ -733,6 +876,7 @@ function FinalReview({
               Cancelar
             </Button>
             <Button variant="exam" disabled={busy} onClick={() => void submit(true)}>
+              {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
               Enviar definitivamente
             </Button>
           </>
@@ -767,6 +911,9 @@ function SubmittedView({ state }: { state: AttemptState }) {
                 : "Su profesora revisará las respuestas y publicará el informe con recomendaciones personalizadas."}
           </p>
         ) : null}
+        {!annulled && state.sections.some((s) => s.status === "timed_out") ? (
+          <p className="mt-2 text-sm text-ink-3">Alguna prueba se cerró al agotarse el tiempo. Se ha entregado todo lo que quedó guardado hasta ese momento.</p>
+        ) : null}
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           {state.attempt.status === "published" || state.attempt.immediate_feedback ? (
             <Link href={`/estudiante/resultados/${state.attempt.id}`} className="inline-flex h-11 items-center rounded-lg bg-brand px-4 font-medium text-white">
@@ -787,83 +934,215 @@ function SubmittedView({ state }: { state: AttemptState }) {
 // ---------------------------------------------------------------------------
 function ResubmissionView({
   state,
+  userId,
   supabase,
   autosave,
+  saveStatus,
+  lastSavedAt,
   refresh,
+  logEvent,
 }: {
   state: AttemptState;
+  userId: string;
   supabase: Supa;
   autosave: Autosave;
+  saveStatus: SaveStatus;
+  lastSavedAt: Date | null;
   refresh: () => Promise<AttemptState | null>;
+  logEvent: (type: string, details?: Record<string, unknown>) => void;
 }) {
   const open = state.resubmissions[0];
+  const attemptId = state.attempt.id;
+  const taskId = open?.task_id ?? "";
   const [payload, setPayload] = useState<TaskPayload | null>(null);
   const [answers, setAnswers] = useState<AnswerMap>({});
+  const [recordings, setRecordings] = useState<Record<string, Record<string, RecordingInfo>>>({});
+  const [plays, setPlays] = useState<Record<string, number>>({});
+  const [micOk, setMicOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [recBusy, setRecBusy] = useState(false);
+  const uploads = useRef(0);
+  const uploadRecording = useUploader({ supabase, userId, attemptId, autosave, uploadsRef: uploads, setRecordings, keepLocal: true });
 
   useEffect(() => {
-    if (!open) return;
+    if (!taskId) return;
     void (async () => {
-      const { data, error: e } = await supabase.rpc("get_attempt_task", { p_attempt: state.attempt.id, p_task: open.task_id });
+      const { data, error: e } = await supabase.rpc("get_attempt_task", { p_attempt: attemptId, p_task: taskId });
       if (e) return setError(errorMessage(e));
       const p = data as TaskPayload;
       const ans: AnswerMap = {};
       for (const r of p.responses) ans[r.item_key] = r.payload;
+      const recs: Record<string, RecordingInfo> = {};
+      for (const r of p.recordings) recs[`${r.part_key}/${r.segment_key}`] = r;
+      const pl: Record<string, number> = {};
+      for (const a of p.audio_plays) pl[a.media_key] = a.plays;
       setPayload(p);
       setAnswers(ans);
+      setRecordings({ [taskId]: recs });
+      setPlays(pl);
     })();
-  }, [open, supabase, state.attempt.id]);
+  }, [taskId, supabase, attemptId]);
 
   if (!open) return <SubmittedView state={state} />;
-  const noMedia: MediaApi = { playsUsed: () => 0, maxPlays: () => 0, requestAudio: async () => Promise.reject(new Error("no")), imageUrl: () => undefined };
+  const content = (payload?.task.content ?? {}) as { media?: Record<string, { asset_id: string; max_plays?: number }> };
+  const media: MediaApi = {
+    playsUsed: (k) => plays[k] ?? 0,
+    maxPlays: (k) => content.media?.[k]?.max_plays ?? payload?.task.max_audio_plays ?? 2,
+    requestAudio: async (k) => {
+      const res = await requestAudioUrl(attemptId, taskId, k);
+      if (!res.ok) throw new Error(res.code ?? res.error);
+      setPlays((s) => ({ ...s, [k]: (s[k] ?? 0) + 1 }));
+      return { url: res.url, synthetic: res.synthetic };
+    },
+    imageUrl: () => undefined,
+  };
+  const isSpeaking = payload?.task.interaction_type === "speaking";
+  const oral: OralApi = {
+    recordings: recordings[taskId] ?? {},
+    linkedChoices: payload?.choices ?? {},
+    allowRerecord: true,
+    micReady: true,
+    onBusyChange: setRecBusy,
+    onProblem: logEvent,
+    upload: (partKey, segmentKey, blob, durationMs) => uploadRecording(taskId, partKey, segmentKey, blob, durationMs),
+  };
+  const missing = payload ? blankCount({ task: payload.task, questions: payload.questions, answers, recordings: recordings[taskId] }) : 1;
 
   return (
     <>
-      <ExamHeader title="Nueva entrega solicitada" subtitle={state.attempt.exam_title} skill="writing" right={<SaveIndicator status={autosave.status} lastSavedAt={autosave.lastSavedAt} />} />
+      <ExamHeader
+        title="Nueva entrega solicitada"
+        subtitle={state.attempt.exam_title}
+        skill={isSpeaking ? "speaking" : "writing"}
+        right={<SaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />}
+      />
       <main id="contenido" className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">
-        <Alert tone="warn" title="Su profesora le pide una nueva versión de este texto">
+        <Alert tone="warn" title={isSpeaking ? "Su profesora le pide que vuelva a grabar esta tarea" : "Su profesora le pide una nueva versión de este texto"}>
           {open.reason}
         </Alert>
-        {error ? <Alert tone="danger" className="mt-4" title="Error">{error}</Alert> : null}
-        <div className="mt-6">
-          {payload ? (
-            <TaskView
-              task={payload.task}
-              questions={payload.questions}
-              bank={payload.bank}
-              answers={answers}
-              onAnswer={(k, v, o) => {
-                setAnswers((s) => ({ ...s, [k]: v }));
-                autosave.enqueue(open.task_id, k, v, o?.debounceMs ?? 0);
+        {error ? (
+          <Alert tone="danger" className="mt-4" title="Error">
+            {error}
+          </Alert>
+        ) : null}
+        {isSpeaking && !micOk ? (
+          <div className="mt-6">
+            <MicCheck
+              onResult={(ok, detail) => {
+                setMicOk(ok);
+                logEvent(ok ? "mic_check_ok" : "mic_check_failed", detail ? { detail } : {});
               }}
-              readOnly={false}
-              media={noMedia}
-              skill="writing"
-              mode={state.attempt.mode}
             />
-          ) : (
-            <Loader2 className="size-5 animate-spin" aria-label="Cargando" />
-          )}
-        </div>
-        <div className="mt-8 flex justify-end">
+          </div>
+        ) : (
+          <div className="mt-6">
+            {payload ? (
+              <TaskErrorBoundary>
+                <TaskView
+                  task={payload.task}
+                  questions={payload.questions}
+                  bank={payload.bank}
+                  answers={answers}
+                  onAnswer={(k, v, o) => {
+                    setAnswers((s) => ({ ...s, [k]: v }));
+                    autosave.enqueue(taskId, k, v, o?.debounceMs ?? 0);
+                  }}
+                  readOnly={false}
+                  media={media}
+                  skill={isSpeaking ? "speaking" : "writing"}
+                  mode={state.attempt.mode}
+                  oral={oral}
+                />
+              </TaskErrorBoundary>
+            ) : (
+              <Loader2 className="size-5 animate-spin" aria-label="Cargando" />
+            )}
+          </div>
+        )}
+        <div className="mt-8 flex flex-wrap items-center justify-end gap-3">
+          {isSpeaking && missing > 0 ? <p className="text-sm text-ink-3">{missing === 1 ? "Falta 1 grabación" : `Faltan ${missing} grabaciones`}</p> : null}
           <Button
             variant="exam"
             size="lg"
-            disabled={busy}
+            disabled={busy || recBusy || (isSpeaking && missing > 0)}
             onClick={async () => {
               setBusy(true);
-              await autosave.flush();
-              const { error: e } = await supabase.rpc("submit_resubmission", { p_attempt: state.attempt.id, p_task: open.task_id });
+              setError(null);
+              if (!(await autosave.flush())) {
+                setBusy(false);
+                setError("Aún hay cambios sin guardar en el servidor. Compruebe la conexión y vuelva a intentarlo.");
+                return;
+              }
+              const { error: e } = await supabase.rpc("submit_resubmission", { p_attempt: attemptId, p_task: taskId });
               setBusy(false);
               if (e) return setError(errorMessage(e));
               await refresh();
             }}
           >
-            Entregar la nueva versión
+            {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+            {isSpeaking ? "Entregar las grabaciones" : "Entregar la nueva versión"}
           </Button>
         </div>
       </main>
     </>
+  );
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+/** Sube una grabación al almacenamiento privado y la registra: solo resuelve cuando el servidor la ha verificado. */
+function useUploader({
+  supabase,
+  userId,
+  attemptId,
+  autosave,
+  uploadsRef,
+  setRecordings,
+  keepLocal,
+}: {
+  supabase: Supa;
+  userId: string;
+  attemptId: string;
+  autosave: Autosave;
+  uploadsRef: React.RefObject<number>;
+  setRecordings: React.Dispatch<React.SetStateAction<Record<string, Record<string, RecordingInfo>>>>;
+  keepLocal: boolean;
+}) {
+  return useCallback(
+    async (taskId: string, partKey: string, segmentKey: string, blob: Blob, durationMs: number) => {
+      uploadsRef.current += 1;
+      try {
+        await autosave.flush();
+        const ext = extensionFor(blob.type);
+        const path = `${userId}/${attemptId}/${taskId}/${partKey}-${segmentKey}-${Date.now()}.${ext}`;
+        const sha = await sha256Hex(blob);
+        const { error: upError } = await supabase.storage.from("recordings").upload(path, blob, { contentType: baseMime(blob.type), upsert: false, cacheControl: "0" });
+        if (upError) throw upError;
+        const { error } = await supabase.rpc("register_recording", {
+          p_attempt: attemptId,
+          p_task: taskId,
+          p_part: partKey,
+          p_segment: segmentKey,
+          p_path: path,
+          p_mime: baseMime(blob.type),
+          p_size: blob.size,
+          p_duration_ms: durationMs,
+          p_sha256: sha,
+        });
+        if (error) throw error;
+        void discardReplacedRecordings(attemptId, taskId, partKey, segmentKey).catch(() => undefined);
+        const localUrl = keepLocal ? URL.createObjectURL(blob) : undefined;
+        setRecordings((s) => ({
+          ...s,
+          [taskId]: { ...(s[taskId] ?? {}), [`${partKey}/${segmentKey}`]: { part_key: partKey, segment_key: segmentKey, status: "verified", duration_ms: durationMs, local_url: localUrl } },
+        }));
+      } finally {
+        uploadsRef.current -= 1;
+      }
+    },
+    [supabase, userId, attemptId, autosave, uploadsRef, setRecordings, keepLocal],
   );
 }

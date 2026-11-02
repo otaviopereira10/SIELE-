@@ -14,6 +14,7 @@ export default async function AttemptPage({ params }: { params: Promise<{ id: st
   const supabase = await createClient();
   // get_attempt_state solo devuelve intentos del propio estudiante y aplica los vencimientos
   const { data, error } = await supabase.rpc("get_attempt_state", { p_attempt: id });
-  if (error || !data) notFound();
+  if (error?.message.includes("attempt_not_found") || (!error && !data)) notFound();
+  if (error) throw new Error("No se pudo cargar el intento.");
   return <ExamRunner initialState={data as AttemptState} userId={profile.id} />;
 }

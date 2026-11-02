@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
+import { Badge, EmptyState, PageHeader, ProgressBar, Table, Td, Th } from "@/components/ui/primitives";
 import { requireStaff } from "@/lib/auth/dal";
 import { loadQueue, loadTeacherOverview } from "@/lib/data/teacher";
 import { buildDiagnosis } from "@/lib/diagnosis/engine";
@@ -160,9 +160,13 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                   </Td>
                   <Td>
                     {productive ? (
-                      <span className="text-sm">
-                        {r.evaluated} completas{r.drafts ? ` · ${r.drafts} en borrador` : ""}
-                      </span>
+                      <div className="w-36">
+                        <p className="mb-1 text-sm tabular-nums">
+                          {r.evaluated} de {r.productive_total} tareas
+                        </p>
+                        <ProgressBar value={r.evaluated} max={r.productive_total} tone="ok" label="Tareas evaluadas" />
+                        {r.empty_audio ? <p className="mt-1 text-xs font-medium text-danger">Hay grabaciones vacías</p> : null}
+                      </div>
                     ) : (
                       <span className="text-sm text-ink-3">Solo corrección automática</span>
                     )}

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireStaff } from "@/lib/auth/dal";
 import { isAiConfigured } from "@/lib/ai/feedback";
@@ -20,22 +19,5 @@ export default async function GradingPage({ params }: { params: Promise<{ id: st
   const supabase = await createClient();
   const { data: setting } = await supabase.from("app_settings").select("value").eq("key", "ai.enabled").maybeSingle();
   const aiEnabled = isAiConfigured() && setting?.value === true;
-  return (
-    <>
-      <p className="mb-3 text-sm">
-        <Link href="/profesora/correcciones" className="text-brand underline">
-          ← Volver a correcciones
-        </Link>
-        {data.attempt.status === "published" ? (
-          <>
-            {" · "}
-            <Link href={`/profesora/informes/${id}`} className="text-brand underline">
-              Ver el informe publicado
-            </Link>
-          </>
-        ) : null}
-      </p>
-      <GradingWorkspace data={data} recordingUrls={recordingUrls} aiEnabled={aiEnabled} />
-    </>
-  );
+  return <GradingWorkspace data={data} recordingUrls={recordingUrls} aiEnabled={aiEnabled} />;
 }

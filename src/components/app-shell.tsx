@@ -75,8 +75,10 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // al corregir, el menú se reduce a iconos para dejar sitio a la respuesta y a la rúbrica
+  const focus = /^\/profesora\/correcciones\/[^/]+$/.test(pathname);
 
-  const links = (
+  const links = (compact: boolean) => (
     <nav aria-label="Navegación principal" className="space-y-1">
       {nav.map((item) => {
         const Icon = ICONS[item.icon];
@@ -87,13 +89,15 @@ export function AppShell({
             href={item.href}
             onClick={() => setOpen(false)}
             aria-current={active ? "page" : undefined}
+            title={compact ? item.label : undefined}
             className={cn(
-              "flex min-h-11 items-center gap-3 rounded-lg px-3 text-[0.95rem] transition-colors",
+              "flex min-h-11 items-center gap-3 rounded-lg text-[0.95rem] transition-colors",
+              compact ? "justify-center" : "px-3",
               active ? "bg-brand text-white" : "text-ink-2 hover:bg-surface-2 hover:text-ink",
             )}
           >
             <Icon className="size-[18px] shrink-0" aria-hidden />
-            {item.label}
+            <span className={compact ? "sr-only" : undefined}>{item.label}</span>
           </Link>
         );
       })}
@@ -115,7 +119,7 @@ export function AppShell({
   );
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[17rem_1fr]">
+    <div className={cn("min-h-dvh lg:grid", focus ? "lg:grid-cols-[4.25rem_minmax(0,1fr)]" : "lg:grid-cols-[17rem_minmax(0,1fr)]")}>
       {/* barra superior (móvil e iPad vertical) */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface/95 px-4 py-3 backdrop-blur lg:hidden">
         <Logo compact />
@@ -141,22 +145,44 @@ export function AppShell({
                 <X className="size-5" />
               </button>
             </div>
-            {links}
+            {links(false)}
             {account}
           </div>
         </div>
       ) : null}
 
-      <aside className="sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface px-4 py-5 lg:flex">
-        <Logo />
-        <p className="-mt-3 rounded-md bg-surface-2 px-2 py-1 text-xs font-medium text-ink-2">{roleLabel}</p>
-        <div className="flex-1">{links}</div>
-        {account}
+      <aside className={cn("sticky top-0 hidden h-dvh flex-col gap-6 overflow-y-auto border-r border-line bg-surface py-5 lg:flex", focus ? "items-stretch px-2" : "px-4")}>
+        {focus ? (
+          <div className="flex justify-center">
+            <Logo compact />
+          </div>
+        ) : (
+          <>
+            <Logo />
+            <p className="-mt-3 rounded-md bg-surface-2 px-2 py-1 text-xs font-medium text-ink-2">{roleLabel}</p>
+          </>
+        )}
+        <div className="flex-1">{links(focus)}</div>
+        {focus ? (
+          <form action={signOut} className="border-t border-line pt-3">
+            <button type="submit" title="Cerrar sesión" aria-label="Cerrar sesión" className="flex min-h-10 w-full items-center justify-center rounded-lg text-ink-2 hover:bg-surface-2 hover:text-ink">
+              <LogOut className="size-4" aria-hidden />
+            </button>
+          </form>
+        ) : (
+          account
+        )}
       </aside>
 
-      <main id="contenido" className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-        <div className="mx-auto max-w-6xl">{children}</div>
-      </main>
+      {focus ? (
+        <main id="contenido" className="min-w-0">
+          {children}
+        </main>
+      ) : (
+        <main id="contenido" className="min-w-0 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+          <div className="mx-auto max-w-6xl">{children}</div>
+        </main>
+      )}
     </div>
   );
 }

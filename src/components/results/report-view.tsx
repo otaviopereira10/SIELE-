@@ -1,3 +1,4 @@
+import { RecordingPlayer } from "@/components/audio/recording-player";
 import Link from "next/link";
 import { CheckCircle2, CircleSlash, Lightbulb, XCircle } from "lucide-react";
 import { Alert, Badge, Card, CardBody, CardHeader, ProgressBar } from "@/components/ui/primitives";
@@ -172,9 +173,13 @@ function ProductiveSection({ section, recordingUrls }: { section: ReportSection;
                   return (
                     <li key={`${r.part_key}/${r.segment_key}`} className="rounded-lg bg-surface-2 px-3 py-2 text-sm">
                       <p className="mb-1 text-ink-2">
-                        Grabación {r.part_key}/{r.segment_key} · {formatDuration(r.duration_ms / 1000)}
+                        Grabación {t.recordings.indexOf(r) + 1} de {t.recordings.length} · {formatDuration(r.duration_ms / 1000)}
                       </p>
-                      {url ? <audio src={url} controls preload="none" className="w-full" /> : null}
+                      {url ? (
+                        <div className="no-print">
+                          <RecordingPlayer src={url} durationMs={r.duration_ms} tone="brand" lazy />
+                        </div>
+                      ) : null}
                     </li>
                   );
                 })}

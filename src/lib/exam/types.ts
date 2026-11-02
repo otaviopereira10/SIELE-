@@ -48,6 +48,8 @@ export interface RecordingInfo {
   segment_key: string;
   status: "pending" | "verified" | "failed";
   duration_ms: number;
+  /** Copia local de lo que se acaba de grabar, para que el estudiante pueda escucharse en práctica. */
+  local_url?: string;
 }
 
 export interface TaskPayload {

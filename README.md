@@ -27,6 +27,10 @@ Stack: Next.js 16 (App Router) · React 19 · TypeScript estricto · Tailwind CS
 6. **Contenido de ejemplo**: `node --env-file=.env.local --experimental-strip-types scripts/seed-content.ts` (sube audios e imágenes y publica el Simulacro 01). Sus claves están en el repositorio: para simulacros formales cree contenido nuevo en `/admin/simulacros`.
 7. **Usuarios de prueba** (solo en un proyecto separado): `ALLOW_TEST_USERS=true node --env-file=.env.test --experimental-strip-types scripts/create-test-users.ts` (contraseñas aleatorias mostradas una vez).
 
+### Pruebas de extremo a extremo
+
+Con la aplicación en marcha (`npm run dev`), `npm run test:e2e` recorre con Chromium y un micrófono simulado el simulacro completo, la corrección y la publicación, además de los casos límite (micrófono sin sonido, fin del tiempo durante una grabación, nueva entrega). Usa el alumno y la profesora de prueba de `ACESSOS.txt` y borra al terminar la asignación temporal que crea.
+
 ### Despliegue en Vercel
 
 Importe el repositorio de GitHub en Vercel, configure las variables de `.env.example` (las `NEXT_PUBLIC_*` y `SUPABASE_SECRET_KEY` como *Sensitive*) y `NEXT_PUBLIC_SITE_URL` con el dominio final. GitHub Pages no sirve: la aplicación necesita servidor.

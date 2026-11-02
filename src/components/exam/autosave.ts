@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { errorCode, isNetworkError } from "@/lib/exam/errors";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { classifySaveError, errorCode } from "@/lib/exam/errors";
 import type { ResponsePayload } from "@/lib/exam/types";
 
 export type SaveStatus = "idle" | "pending" | "saving" | "saved" | "offline" | "error";
@@ -15,13 +15,11 @@ interface PendingItem {
 
 type Saver = (taskId: string, itemKey: string, payload: ResponsePayload) => Promise<void>;
 
-const FATAL = new Set(["time_expired", "section_not_active", "attempt_closed", "navigation_back_not_allowed", "task_already_checked", "attempt_locked_contact_teacher"]);
-
 /**
  * Cola de guardado automático.
  * - Las respuestas se envían al servidor (fuente de verdad) con un pequeño retardo para los textos.
- * - Si no hay conexión, se conservan en este dispositivo (copia de seguridad) y se reintentan.
- * - Los rechazos definitivos del servidor (tiempo agotado, prueba cerrada) no se reintentan.
+ * - Ante un corte, una sesión caducada o un fallo temporal se conservan en este dispositivo y se reintentan.
+ * - Solo se descartan los rechazos definitivos del servidor (tiempo agotado, prueba cerrada, dato no válido).
  */
 export function useAutosave(storageKey: string | null, save: Saver, onFatal: (code: string) => void) {
   const queue = useRef(new Map<string, PendingItem>());
@@ -48,53 +46,62 @@ export function useAutosave(storageKey: string | null, save: Saver, onFatal: (co
     }
   }, [storageKey]);
 
-  const flush = useCallback(async (force = false): Promise<void> => {
-    if (flushing.current) {
-      await flushing.current;
-      if (!force) return;
-    }
-    const run = (async () => {
-      const now = Date.now();
-      const due = [...queue.current.values()].filter((i) => force || i.dueAt <= now);
-      if (due.length === 0) return;
-      setStatus("saving");
-      let offline = false;
-      for (const item of due) {
-        const k = `${item.taskId}|${item.itemKey}`;
-        const current = queue.current.get(k);
-        if (!current) continue;
-        try {
-          await saveRef.current(item.taskId, item.itemKey, current.payload);
-          // solo se elimina si no cambió mientras se guardaba
-          if (queue.current.get(k) === current) queue.current.delete(k);
-        } catch (err) {
-          if (isNetworkError(err)) {
-            offline = true;
-            break;
-          }
-          const code = errorCode(err);
-          queue.current.delete(k);
-          if (code && FATAL.has(code)) {
-            fatalRef.current(code);
-          } else {
-            setStatus("error");
+  /** Devuelve true si no queda nada pendiente de guardar. */
+  const flush = useCallback(
+    async (force = false): Promise<boolean> => {
+      if (flushing.current) {
+        await flushing.current;
+        if (!force) return queue.current.size === 0;
+      }
+      const run = (async () => {
+        const now = Date.now();
+        const due = [...queue.current.values()].filter((i) => force || i.dueAt <= now);
+        if (due.length === 0) return;
+        setStatus("saving");
+        let offline = false;
+        let failed = false;
+        let rejected = false;
+        for (const item of due) {
+          const k = `${item.taskId}|${item.itemKey}`;
+          const current = queue.current.get(k);
+          if (!current) continue;
+          try {
+            await saveRef.current(item.taskId, item.itemKey, current.payload);
+            // solo se elimina si no cambió mientras se guardaba
+            if (queue.current.get(k) === current) queue.current.delete(k);
+          } catch (err) {
+            const kind = classifySaveError(err);
+            if (kind === "network") {
+              offline = true;
+              break;
+            }
+            if (kind === "session" || kind === "retry") {
+              failed = true;
+              break;
+            }
+            queue.current.delete(k);
+            if (kind === "closed") fatalRef.current(errorCode(err) ?? "attempt_closed");
+            else rejected = true;
           }
         }
+        persist();
+        if (offline) setStatus("offline");
+        else if (failed || rejected) setStatus("error");
+        else if (queue.current.size === 0) {
+          setStatus("saved");
+          setLastSavedAt(new Date());
+        } else setStatus("pending");
+      })();
+      flushing.current = run;
+      try {
+        await run;
+      } finally {
+        flushing.current = null;
       }
-      persist();
-      if (offline) setStatus("offline");
-      else if (queue.current.size === 0) {
-        setStatus("saved");
-        setLastSavedAt(new Date());
-      } else setStatus("pending");
-    })();
-    flushing.current = run;
-    try {
-      await run;
-    } finally {
-      flushing.current = null;
-    }
-  }, [persist]);
+      return queue.current.size === 0;
+    },
+    [persist],
+  );
 
   const schedule = useCallback(() => {
     if (timer.current) window.clearTimeout(timer.current);
@@ -146,13 +153,16 @@ export function useAutosave(storageKey: string | null, save: Saver, onFatal: (co
     };
   }, [flush]);
 
-  return {
-    enqueue,
-    flush: () => flush(true),
-    status,
-    lastSavedAt,
-    pendingCount,
-    hasPending: () => queue.current.size > 0,
-    pendingFor: (taskId: string) => [...queue.current.values()].filter((i) => i.taskId === taskId),
-  };
+  // funciones estables: se pueden usar como dependencias sin provocar recargas en cada renderizado
+  const actions = useMemo(
+    () => ({
+      enqueue,
+      flush: () => flush(true),
+      hasPending: () => queue.current.size > 0,
+      pendingFor: (taskId: string) => [...queue.current.values()].filter((i) => i.taskId === taskId),
+    }),
+    [enqueue, flush],
+  );
+
+  return { actions, status, lastSavedAt, pendingCount };
 }

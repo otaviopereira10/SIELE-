@@ -23,7 +23,7 @@ export function WritingTask(props: TaskRendererProps) {
   const ref = useRef<HTMLTextAreaElement | null>(null);
 
   const option = c.options?.find((o) => o.key === optionKey) ?? null;
-  const bullets = option ? option.bullets : c.bullets;
+  const bullets = (option ? option.bullets : c.bullets) ?? [];
   const stimulus = option ? option.stimulus : c.stimulus;
   const min = option ? option.word_min : c.word_min;
   const max = option ? option.word_max : c.word_max;

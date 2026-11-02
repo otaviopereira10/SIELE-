@@ -216,10 +216,23 @@ describe("nueva entrega solicitada", () => {
     ).rejects.toThrow(/attempt_closed/);
   });
 
-  it("solo se permite en tareas escritas", async () => {
-    await expect(db.rpc(w.teacher, "request_resubmission", [attempt, w.tasks.speaking, "Graba otra vez"])).rejects.toThrow(
-      /resubmission_only_for_writing/,
-    );
+  it("no se permite en las pruebas de comprensión", async () => {
+    await expect(db.rpc(w.teacher, "request_resubmission", [attempt, w.tasks.readingChoice, "Repite esta tarea"])).rejects.toThrow(/resubmission_only_for_productive/);
+  });
+
+  it("en una tarea oral reabre la grabación y exige repetirla antes de entregar", async () => {
+    await db.rpc(w.teacher, "request_resubmission", [attempt, w.tasks.speaking, "No se oye: vuelve a grabar."]);
+    const [rec] = await db.sql<{ status: string }>(`select status from public.oral_recordings where attempt_id = $1 and task_id = $2`, [attempt, w.tasks.speaking]);
+    expect(rec.status).toBe("failed");
+    await expect(db.rpc(w.student, "submit_resubmission", [attempt, w.tasks.speaking])).rejects.toThrow(/recording_required/);
+
+    const path = `${w.student}/${attempt}/${w.tasks.speaking}/p1-q1-1800000000000.webm`;
+    await db.as(w.student, `insert into storage.objects (bucket_id, name, owner, metadata) values ('recordings', $1, $2, $3)`, [path, w.student, JSON.stringify({ size: 8192 })]);
+    const res = await db.rpc<Json>(w.student, "register_recording", [attempt, w.tasks.speaking, "p1", "q1", path, "audio/webm", 8192, 12000, "c".repeat(64)]);
+    expect(res.status).toBe("verified");
+    await db.rpc(w.student, "submit_resubmission", [attempt, w.tasks.speaking]);
+    const [a] = await db.sql<{ status: string }>(`select status from public.attempts where id = $1`, [attempt]);
+    expect(a.status).toBe("submitted");
   });
 });
 
